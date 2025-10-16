@@ -142,8 +142,12 @@ class RpgGui:
 
         self.inv_frame.config(text=f"Inventar ({len(self.player.inventory)}/{self.player.max_inventory_size})")
         self.inventory_listbox.delete(0, tk.END)
-        for item in self.player.inventory:
+        for i, item in enumerate(self.player.inventory):
             self.inventory_listbox.insert(tk.END, str(item))
+            if self.player.is_upgrade(item):
+                self.inventory_listbox.itemconfig(i, {'bg': '#90EE90'}) # LightGreen
+            else:
+                self.inventory_listbox.itemconfig(i, {'bg': 'white'})
 
         # Disable/Enable buttons based on state
         is_questing = self.current_quest is not None

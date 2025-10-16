@@ -31,3 +31,9 @@ class Item:
         boost_str = ", ".join(boosts)
 
         return f"{self.name} ({self.slot}) [{boost_str}] - {self.value} Gold"
+
+    def get_total_bonus(self):
+        """Calculates the sum of all stat boosts of the item."""
+        if not self.stats_boost:
+            return 0
+        return sum(self.stats_boost.values())

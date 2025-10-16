@@ -45,6 +45,25 @@ class Character:
                 return False
         return True # For cases where only gold is added
 
+    def is_upgrade(self, item_from_inventory):
+        """
+        Checks if an item in the inventory is an upgrade over the equipped item.
+
+        Args:
+            item_from_inventory (Item): The item to check.
+
+        Returns:
+            bool: True if the item is an upgrade, False otherwise.
+        """
+        equipped_item = self.equipment.get(item_from_inventory.slot)
+
+        # If no item is equipped in that slot, any item is an upgrade.
+        if not equipped_item:
+            return True
+
+        # Compare the total bonus stats.
+        return item_from_inventory.get_total_bonus() > equipped_item.get_total_bonus()
+
     def equip(self, item_index):
         """
         Equips an item from the inventory.
