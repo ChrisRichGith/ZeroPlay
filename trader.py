@@ -50,3 +50,28 @@ class Trader:
             self.inventory_upgrade_cost = int(self.inventory_upgrade_cost * self.upgrade_cost_increase_factor)
             return True
         return False
+
+    def sell_all_non_upgrades(self, character):
+        """
+        Sells all items that are not considered an upgrade.
+
+        Args:
+            character (Character): The player character.
+
+        Returns:
+            tuple: A tuple containing the number of items sold and the total gold gained.
+        """
+        items_to_sell = [item for item in character.inventory if not character.is_upgrade(item)]
+
+        items_sold_count = len(items_to_sell)
+        gold_gained = 0
+
+        if not items_to_sell:
+            return 0, 0
+
+        for item in items_to_sell:
+            gold_gained += item.value
+            character.inventory.remove(item)
+
+        character.gold += gold_gained
+        return items_sold_count, gold_gained

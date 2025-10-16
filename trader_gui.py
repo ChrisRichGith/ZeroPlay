@@ -78,9 +78,14 @@ class TraderWindow:
         # Bottom frame for sell button
         bottom_frame = ttk.Frame(main_frame)
         bottom_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        bottom_frame.columnconfigure(0, weight=1)
+        bottom_frame.columnconfigure(1, weight=1)
 
         self.sell_button = ttk.Button(bottom_frame, text="Ausgewählten Gegenstand verkaufen", command=self.sell_item)
-        self.sell_button.pack()
+        self.sell_button.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+
+        self.sell_all_button = ttk.Button(bottom_frame, text="Allen Schrott verkaufen", command=self.sell_all_non_upgrades)
+        self.sell_all_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
 
     def update_display(self):
         """Updates all display elements in the trader window."""
@@ -108,8 +113,22 @@ class TraderWindow:
 
         sold = self.trader.sell_item(self.player, item_index)
         if sold:
-            messagebox.showinfo("Verkauft!", f"'{item_name}' für {item_value} Gold verkauft.", parent=self.window)
+            # messagebox.showinfo("Verkauft!", f"'{item_name}' für {item_value} Gold verkauft.", parent=self.window)
             self.update_display()
+
+    def sell_all_non_upgrades(self):
+        """Sells all non-upgrade items and shows a summary."""
+        items_sold, gold_gained = self.trader.sell_all_non_upgrades(self.player)
+
+        if items_sold > 0:
+            messagebox.showinfo("Alles verkauft",
+                                f"{items_sold} Gegenstand/Gegenstände für insgesamt {gold_gained} Gold verkauft.",
+                                parent=self.window)
+            self.update_display()
+        else:
+            messagebox.showinfo("Nichts zu verkaufen",
+                                "Du hast keine Gegenstände, die kein Upgrade sind.",
+                                parent=self.window)
 
     def buy_upgrade(self):
         """Buys an inventory upgrade."""
