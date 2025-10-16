@@ -8,6 +8,8 @@ import random
 
 from character import Character
 from quest import Quest
+from trader import Trader
+from trader_gui import TraderWindow
 
 # Liste verfügbarer Quests
 AVAILABLE_QUESTS = [
@@ -26,10 +28,12 @@ class RpgGui:
         self.root = root
         self.root.title("Progress Quest 2.0 - GUI Edition")
         self.root.geometry("800x600")
-        self.root.minsize(600, 500)
+        self.root.minsize(700, 550)
 
         self.player = Character(player_name, player_class)
+        self.trader = Trader()
         self.current_quest = None
+        self.is_auto_questing = False
 
         self._setup_string_vars()
         self.create_widgets()
@@ -43,6 +47,9 @@ class RpgGui:
         self.stats_vars = {stat: tk.StringVar() for stat in ['Stärke', 'Intelligenz', 'Glück']}
         self.equipment_vars = {slot: tk.StringVar() for slot in ['Kopf', 'Brust', 'Waffe']}
         self.quest_label_var = tk.StringVar(value="Keine aktive Quest.")
+        self.inventory_label_var = tk.StringVar()
+        self.quest_status_var = tk.StringVar()
+
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
@@ -80,13 +87,25 @@ class RpgGui:
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
         actions_frame.pack(fill=tk.X)
+
         self.quest_button = ttk.Button(actions_frame, text="Neue Quest beginnen", command=self.start_quest)
         self.quest_button.pack(fill=tk.X, pady=5)
+
+        self.auto_quest_button = ttk.Button(actions_frame, text="Auto-Quest starten", command=self.toggle_auto_quest)
+        self.auto_quest_button.pack(fill=tk.X, pady=5)
+
+        self.trader_button = ttk.Button(actions_frame, text="Händler besuchen", command=self.open_trader_window)
+        self.trader_button.pack(fill=tk.X, pady=5)
+
         self.equip_button = ttk.Button(actions_frame, text="Gegenstand ausrüsten", command=self.equip_item)
         self.equip_button.pack(fill=tk.X, pady=5)
+
+        # Quest Progress
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
-        self.progress_bar.pack(fill=tk.X, pady=(10, 0))
+        self.progress_bar.pack(fill=tk.X, pady=(10, 5))
         ttk.Label(actions_frame, textvariable=self.quest_label_var).pack()
+        ttk.Label(actions_frame, textvariable=self.quest_status_var, foreground="gray").pack()
+
 
     def _create_equipment_frame(self, parent):
         equip_frame = ttk.LabelFrame(parent, text="Ausrüstung", padding="10")
@@ -96,7 +115,7 @@ class RpgGui:
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
     def _create_inventory_frame(self, parent):
-        inv_frame = ttk.LabelFrame(parent, text="Inventar", padding="10")
+        inv_frame = ttk.LabelFrame(parent, textvariable=self.inventory_label_var, padding="10")
         inv_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
         inv_frame.rowconfigure(0, weight=1)
         inv_frame.columnconfigure(0, weight=1)
@@ -120,42 +139,86 @@ class RpgGui:
         for slot, var in self.equipment_vars.items():
             item = self.player.equipment.get(slot)
             var.set(item.name if item else "Leer")
+
+        self.inventory_label_var.set(f"Inventar ({len(self.player.inventory)}/{self.player.max_inventory_size})")
         self.inventory_listbox.delete(0, tk.END)
         for item in self.player.inventory:
             self.inventory_listbox.insert(tk.END, str(item))
+
+        # Disable/Enable buttons based on state
+        is_questing = self.current_quest is not None
+        self.quest_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
+        self.trader_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
+        self.auto_quest_button.config(state=tk.DISABLED if is_questing and not self.is_auto_questing else tk.NORMAL)
+
         self.root.update_idletasks()
 
+    def toggle_auto_quest(self):
+        """Starts or stops the auto-questing mode."""
+        self.is_auto_questing = not self.is_auto_questing
+        if self.is_auto_questing:
+            self.auto_quest_button.config(text="Auto-Quest stoppen")
+            self.quest_status_var.set("Auto-Quest Modus aktiv...")
+            self.start_quest()
+        else:
+            self.auto_quest_button.config(text="Auto-Quest starten")
+            self.quest_status_var.set("Auto-Quest Modus gestoppt.")
+
     def start_quest(self):
-        """Starts a new quest."""
-        if self.current_quest and not self.current_quest.is_complete():
-            messagebox.showwarning("Quest aktiv", "Bitte schließe erst die aktuelle Quest ab.")
+        """Starts a new quest, either manually or via auto-quest."""
+        if self.current_quest:
+            if not self.is_auto_questing:
+                messagebox.showwarning("Quest aktiv", "Bitte schließe erst die aktuelle Quest ab.")
             return
-        self.quest_button.config(state=tk.DISABLED)
+
+        if len(self.player.inventory) >= self.player.max_inventory_size:
+            self.quest_status_var.set("Inventar voll! Auto-Quest gestoppt.")
+            messagebox.showinfo("Inventar voll", "Dein Inventar ist voll. Besuche den Händler!")
+            if self.is_auto_questing:
+                self.toggle_auto_quest() # Stop auto-questing
+            return
+
         quest_desc = random.choice(AVAILABLE_QUESTS)
         self.current_quest = Quest(quest_desc)
         self.quest_label_var.set(quest_desc)
         self.progress_bar['value'] = 0
+        self.update_display() # Update button states
         self.advance_quest()
 
     def advance_quest(self):
         """Advances quest progress and updates the GUI."""
+        if self.current_quest is None: return
+
         if self.current_quest.is_complete():
             gold, item = self.current_quest._generate_reward()
-            self.player.add_loot(gold, item)
+            item_added = self.player.add_loot(gold, item)
             self.player.level += 1
+
             loot_message = f"Loot: {gold} Gold"
             if item:
-                loot_message += f" und '{item.name}'"
-            messagebox.showinfo("Quest abgeschlossen!", f"Du hast Level {self.player.level} erreicht!\n{loot_message}.")
+                if item_added:
+                    loot_message += f" und '{item.name}'"
+                else:
+                    loot_message += f" (aber '{item.name}' passte nicht ins Inventar!)"
+
+            self.quest_status_var.set(f"Level {self.player.level} erreicht! {loot_message}")
+
+            if not self.is_auto_questing:
+                messagebox.showinfo("Quest abgeschlossen!", f"Du hast Level {self.player.level} erreicht!\n{loot_message}.")
+
+            self.current_quest = None
             self.quest_label_var.set("Keine aktive Quest.")
             self.progress_bar['value'] = 0
-            self.quest_button.config(state=tk.NORMAL)
-            self.current_quest = None
+
+            if self.is_auto_questing:
+                self.root.after(1000, self.start_quest) # Start next quest after a delay
+
         else:
             self.current_quest.progress += 1
             progress_percent = (self.current_quest.progress / self.current_quest.duration) * 100
             self.progress_bar['value'] = progress_percent
-            self.root.after(200, self.advance_quest)
+            self.root.after(150, self.advance_quest) # Schedule next update
+
         self.update_display()
 
     def equip_item(self):
@@ -168,28 +231,31 @@ class RpgGui:
         self.player.equip(item_index)
         self.update_display()
 
+    def open_trader_window(self):
+        """Opens the trader interface."""
+        self.trader_button.config(state=tk.DISABLED)
+        TraderWindow(self.root, self.player, self.trader, on_close_callback=self.on_trader_close)
+
+    def on_trader_close(self):
+        """Callback function for when the trader window is closed."""
+        self.update_display() # Refresh main GUI in case gold/inventory changed
+        self.trader_button.config(state=tk.NORMAL)
+
+
 def start_game_with_character_creation():
     """Handles character creation and starts the main GUI."""
     root_window = tk.Tk()
-    root_window.withdraw()  # Hide the main window initially
+    root_window.withdraw()
 
     player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=root_window)
-    if player_name is None:  # User cancelled
-        root_window.destroy()
-        return
-
+    if player_name is None: root_window.destroy(); return
     player_class = simpledialog.askstring("Charakter erstellen", "Gib die Klasse deines Helden ein:", parent=root_window)
-    if player_class is None:  # User cancelled
-        root_window.destroy()
-        return
+    if player_class is None: root_window.destroy(); return
 
-    # Use default names if input is empty
-    if not player_name:
-        player_name = "Held"
-    if not player_class:
-        player_class = "Anfänger"
+    if not player_name: player_name = "Held"
+    if not player_class: player_class = "Anfänger"
 
-    root_window.deiconify()  # Show the main window
+    root_window.deiconify()
     app = RpgGui(root_window, player_name, player_class)
     root_window.mainloop()
 

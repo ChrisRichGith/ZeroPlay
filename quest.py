@@ -9,13 +9,13 @@ from item import Item
 # Vordefinierte Liste möglicher Items als Loot
 # In einer größeren Anwendung würde dies aus einer Datenbank oder Konfigurationsdatei geladen
 POSSIBLE_LOOT = [
-    Item("Verfluchte Geige", "Waffe", {"Intelligenz": 5, "Glück": -2}),
-    Item("Helm des Wahnsinns", "Kopf", {"Stärke": 3, "Intelligenz": -1}),
-    Item("Rostige Brustplatte", "Brust", {"Stärke": 1}),
-    Item("Glücksfeder", "Kopf", {"Glück": 2}),
-    Item("Schwert der Mittelmäßigkeit", "Waffe", {"Stärke": 2}),
-    Item("Seidenschal der Diplomatie", "Kopf", {"Intelligenz": 2}),
-    Item("Solide Lederweste", "Brust", {"Stärke": 2}),
+    Item("Verfluchte Geige", "Waffe", {"Intelligenz": 5, "Glück": -2}, value=50),
+    Item("Helm des Wahnsinns", "Kopf", {"Stärke": 3, "Intelligenz": -1}, value=35),
+    Item("Rostige Brustplatte", "Brust", {"Stärke": 1}, value=10),
+    Item("Glücksfeder", "Kopf", {"Glück": 2}, value=25),
+    Item("Schwert der Mittelmäßigkeit", "Waffe", {"Stärke": 2}, value=20),
+    Item("Seidenschal der Diplomatie", "Kopf", {"Intelligenz": 2}, value=22),
+    Item("Solide Lederweste", "Brust", {"Stärke": 2}, value=18),
 ]
 
 class Quest:

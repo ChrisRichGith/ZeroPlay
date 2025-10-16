@@ -21,21 +21,29 @@ class Character:
         self.gold = 0
         self.attributes = {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}
         self.inventory = []
+        self.max_inventory_size = 10
         self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
 
     def add_loot(self, gold, item):
         """
-        Adds gold and an item to the character's inventory.
+        Adds gold and an item to the character's inventory if there is space.
 
         Args:
             gold (int): The amount of gold to add.
             item (Item): The item to add.
+
+        Returns:
+            bool: True if the item was added, False otherwise.
         """
         self.gold += gold
         if item:
-            self.inventory.append(item)
-        # The print statement has been removed to make this method GUI-friendly.
-        # Feedback to the user is now handled by the GUI.
+            if len(self.inventory) < self.max_inventory_size:
+                self.inventory.append(item)
+                return True
+            else:
+                # Inventory is full, item is not added
+                return False
+        return True # For cases where only gold is added
 
     def equip(self, item_index):
         """
