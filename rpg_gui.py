@@ -115,11 +115,11 @@ class RpgGui:
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
     def _create_inventory_frame(self, parent):
-        inv_frame = ttk.LabelFrame(parent, textvariable=self.inventory_label_var, padding="10")
-        inv_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
-        inv_frame.rowconfigure(0, weight=1)
-        inv_frame.columnconfigure(0, weight=1)
-        self.inventory_listbox = tk.Listbox(inv_frame)
+        self.inv_frame = ttk.LabelFrame(parent, text="Inventar", padding="10")
+        self.inv_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        self.inv_frame.rowconfigure(0, weight=1)
+        self.inv_frame.columnconfigure(0, weight=1)
+        self.inventory_listbox = tk.Listbox(self.inv_frame)
         self.inventory_listbox.grid(row=0, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(inv_frame, orient=tk.VERTICAL, command=self.inventory_listbox.yview)
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
@@ -140,7 +140,7 @@ class RpgGui:
             item = self.player.equipment.get(slot)
             var.set(item.name if item else "Leer")
 
-        self.inventory_label_var.set(f"Inventar ({len(self.player.inventory)}/{self.player.max_inventory_size})")
+        self.inv_frame.config(text=f"Inventar ({len(self.player.inventory)}/{self.player.max_inventory_size})")
         self.inventory_listbox.delete(0, tk.END)
         for item in self.player.inventory:
             self.inventory_listbox.insert(tk.END, str(item))
