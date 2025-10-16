@@ -34,7 +34,8 @@ class Character:
         self.gold += gold
         if item:
             self.inventory.append(item)
-        print(f"Loot erhalten: {gold} Gold und {item.name if item else 'nichts'}.")
+        # The print statement has been removed to make this method GUI-friendly.
+        # Feedback to the user is now handled by the GUI.
 
     def equip(self, item_index):
         """
@@ -55,11 +56,11 @@ class Character:
                 # Neues Item ausrüsten
                 self.equipment[slot] = item_to_equip
                 self.inventory.pop(item_index)
-                print(f"{item_to_equip.name} wurde ausgerüstet.")
-            else:
-                print("Dieser Gegenstand kann nicht ausgerüstet werden.")
-        else:
-            print("Ungültiger Inventarplatz.")
+                # print(f"{item_to_equip.name} wurde ausgerüstet.") # GUI handles feedback
+            # else:
+                # print("Dieser Gegenstand kann nicht ausgerüstet werden.") # GUI handles feedback
+        # else:
+            # print("Ungültiger Inventarplatz.") # GUI handles feedback
 
     def get_total_stats(self):
         """
