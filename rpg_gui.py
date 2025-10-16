@@ -121,7 +121,7 @@ class RpgGui:
         self.inv_frame.columnconfigure(0, weight=1)
         self.inventory_listbox = tk.Listbox(self.inv_frame)
         self.inventory_listbox.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(inv_frame, orient=tk.VERTICAL, command=self.inventory_listbox.yview)
+        scrollbar = ttk.Scrollbar(self.inv_frame, orient=tk.VERTICAL, command=self.inventory_listbox.yview)
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
