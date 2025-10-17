@@ -7,7 +7,8 @@ from character import Character
 from start_menu_gui import StartMenu
 from class_selection_frame import ClassSelectionFrame
 from rpg_gui import RpgGui
-from save_load_system import save_game, load_game
+from save_load_system import save_game, load_game, get_save_files, SAVE_DIR
+import os
 
 class Game:
     """The main controller for the application, manages scenes."""
@@ -60,11 +61,20 @@ class Game:
 
     def show_game(self):
         callbacks = {
-            'game_over': self.show_start_menu,
-            'save_and_quit': self.quit_game # This callback is not used by RpgGui yet
+            'game_over': self.handle_game_over_and_restart,
         }
         # The RpgGui now takes the character object directly
         self.switch_frame(RpgGui, character=self.character, callbacks=callbacks)
+
+    def handle_game_over_and_restart(self):
+        """Deletes the save file of the dead character and returns to the start menu."""
+        save_file_path = os.path.join(SAVE_DIR, f"{self.character.name}.sav")
+        if os.path.exists(save_file_path):
+            os.remove(save_file_path)
+            print(f"Spielstand für {self.character.name} gelöscht.")
+
+        self.character = None
+        self.show_start_menu()
 
     def on_closing(self):
         """Handles the main window closing event."""

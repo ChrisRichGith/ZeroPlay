@@ -107,12 +107,10 @@ class RpgGui(ttk.Frame):
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
 
-        # Quest Description Text Box
         self.quest_desc_text = tk.Text(actions_frame, height=3, wrap=tk.WORD, bg="lightgrey", relief="flat")
         self.quest_desc_text.pack(fill=tk.X, pady=5)
         self.quest_desc_text.config(state=tk.DISABLED)
 
-        # Loot/Status Text Box
         self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
         self.loot_status_text.pack(fill=tk.X, pady=5)
         self.loot_status_text.config(state=tk.DISABLED)
@@ -137,7 +135,6 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
 
     def update_display(self):
-        """Updates all GUI elements with the current player data."""
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
         self.char_gold_var.set(self.player.gold)
@@ -168,7 +165,6 @@ class RpgGui(ttk.Frame):
         self.update_idletasks()
 
     def set_text(self, text_widget, text):
-        """Helper function to set text in a disabled Text widget."""
         text_widget.config(state=tk.NORMAL)
         text_widget.delete("1.0", tk.END)
         text_widget.insert("1.0", text)
