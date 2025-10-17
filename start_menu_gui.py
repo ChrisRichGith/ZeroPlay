@@ -32,8 +32,21 @@ class StartMenu(ttk.Frame):
         }
 
     def create_widgets(self):
-        self.master.geometry("600x400") # Resize the main window
+        self.master.geometry("600x500") # Resize the main window
         self.master.title("Progress Quest 2.0 - Hauptmenü")
+
+        # Introduction Text
+        intro_text_content = (
+            "Willkommen bei Progress Quest 2.0!\n\n"
+            "Wähle einen Spielstand oder erstelle einen neuen Helden. "
+            "Dein Held wird automatisch Quests erledigen. Deine Aufgabe ist es, "
+            "seine Ausrüstung zu verwalten und Tränke zu kaufen.\n\n"
+            "ACHTUNG: Wenn dein Held stirbt, wird sein Spielstand endgültig gelöscht!"
+        )
+        intro_frame = ttk.LabelFrame(self, text="Spielanleitung", padding=10)
+        intro_frame.pack(fill=tk.X, padx=10, pady=10)
+        intro_label = ttk.Label(intro_frame, text=intro_text_content, wraplength=550, justify=tk.LEFT)
+        intro_label.pack()
 
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
         main_pane.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
