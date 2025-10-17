@@ -46,8 +46,6 @@ class RpgGui(ttk.Frame):
         self.char_gold_var = tk.StringVar()
         self.stats_vars = {stat: tk.StringVar() for stat in ['Stärke', 'Intelligenz', 'Glück']}
         self.equipment_vars = {slot: tk.StringVar() for slot in ['Kopf', 'Brust', 'Waffe']}
-        self.quest_label_var = tk.StringVar(value="Keine aktive Quest.")
-        self.quest_status_var = tk.StringVar()
         self.lp_label_var = tk.StringVar()
         self.mp_label_var = tk.StringVar()
         self.xp_label_var = tk.StringVar()
@@ -108,8 +106,16 @@ class RpgGui(ttk.Frame):
         self.use_button.pack(fill=tk.X, pady=5)
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
-        ttk.Label(actions_frame, textvariable=self.quest_label_var, wraplength=250, justify=tk.CENTER).pack()
-        ttk.Label(actions_frame, textvariable=self.quest_status_var, foreground="gray").pack()
+
+        # Quest Description Text Box
+        self.quest_desc_text = tk.Text(actions_frame, height=3, wrap=tk.WORD, bg="lightgrey", relief="flat")
+        self.quest_desc_text.pack(fill=tk.X, pady=5)
+        self.quest_desc_text.config(state=tk.DISABLED)
+
+        # Loot/Status Text Box
+        self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
+        self.loot_status_text.pack(fill=tk.X, pady=5)
+        self.loot_status_text.config(state=tk.DISABLED)
 
     def _create_equipment_frame(self, parent):
         equip_frame = ttk.LabelFrame(parent, text="Ausrüstung", padding="10")
@@ -161,15 +167,22 @@ class RpgGui(ttk.Frame):
         self.update_button_states()
         self.update_idletasks()
 
+    def set_text(self, text_widget, text):
+        """Helper function to set text in a disabled Text widget."""
+        text_widget.config(state=tk.NORMAL)
+        text_widget.delete("1.0", tk.END)
+        text_widget.insert("1.0", text)
+        text_widget.config(state=tk.DISABLED)
+
     def toggle_auto_quest(self):
         self.is_auto_questing = not self.is_auto_questing
         if self.is_auto_questing:
             self.auto_quest_button.config(text="Auto-Quest stoppen")
-            self.quest_status_var.set("Auto-Quest Modus aktiv...")
+            self.set_text(self.loot_status_text, "Auto-Quest Modus aktiv...")
             self.start_quest()
         else:
             self.auto_quest_button.config(text="Auto-Quest starten")
-            self.quest_status_var.set("Auto-Quest Modus gestoppt.")
+            self.set_text(self.loot_status_text, "Auto-Quest Modus gestoppt.")
 
     def start_quest(self):
         if self.current_quest:
@@ -177,14 +190,14 @@ class RpgGui(ttk.Frame):
                 messagebox.showwarning("Quest aktiv", "Bitte schließe erst die aktuelle Quest ab.")
             return
         if len(self.player.inventory) >= self.player.max_inventory_size:
-            self.quest_status_var.set("Inventar voll! Auto-Quest gestoppt.")
+            self.set_text(self.loot_status_text, "Inventar voll! Auto-Quest gestoppt.")
             messagebox.showinfo("Inventar voll", "Dein Inventar ist voll. Besuche den Händler!")
             if self.is_auto_questing:
                 self.toggle_auto_quest()
             return
         quest_desc = random.choice(AVAILABLE_QUESTS)
         self.current_quest = Quest(quest_desc)
-        self.quest_label_var.set(quest_desc)
+        self.set_text(self.quest_desc_text, quest_desc)
         self.progress_bar['value'] = 0
         self.update_display()
         self.advance_quest()
@@ -206,12 +219,12 @@ class RpgGui(ttk.Frame):
             loot_message = f"Loot: {gold} Gold, {xp} XP"
             if item:
                 loot_message += f" und '{item.name}'" if item_added else f" (aber '{item.name}' passte nicht ins Inventar!)"
-            self.quest_status_var.set(loot_message)
+            self.set_text(self.loot_status_text, loot_message)
             if level_up_info:
                 level_up_summary = f"Level Up! Du bist jetzt Level {self.player.level}!\n\nAttribut-Boni:\n" + "\n".join(level_up_info)
                 messagebox.showinfo("Level Aufstieg!", level_up_summary)
             self.current_quest = None
-            self.quest_label_var.set("Keine aktive Quest.")
+            self.set_text(self.quest_desc_text, "Keine aktive Quest.")
             self.progress_bar['value'] = 0
             if self.is_auto_questing:
                 self.master.after(1000, self.start_quest)
