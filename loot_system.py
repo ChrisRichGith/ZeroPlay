@@ -32,8 +32,8 @@ def generate_item_for_level(level):
     stat_bonus = int(base_bonus + (level * 0.8) + (power_level * 2))
 
     # 4. Calculate item value
-    # Formula: Value scales with level and is heavily modified by power level
-    value = int((level * 5) + (stat_bonus * 3) * (1 + power_level * 0.5))
+    # Formula: Value in copper. Scales with level and is modified by power level.
+    value = int((level * 2) + (stat_bonus * 1.5) * (1 + power_level * 0.4))
     value = max(1, value) # Ensure value is at least 1
 
     # 5. Assemble the item

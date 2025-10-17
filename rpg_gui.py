@@ -11,6 +11,7 @@ from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
+from utils import format_currency
 
 # Liste verfügbarer Quests
 AVAILABLE_QUESTS = [
@@ -144,7 +145,7 @@ class RpgGui(ttk.Frame):
     def update_display(self):
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
-        self.char_gold_var.set(self.player.gold)
+        self.char_gold_var.set(format_currency(self.player.copper))
         total_stats = self.player.get_total_stats()
         for stat, var in self.stats_vars.items():
             base = self.player.attributes.get(stat, 0)

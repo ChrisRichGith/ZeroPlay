@@ -51,7 +51,7 @@ class Quest:
         """
         luck_bonus = 1 + (character.get_total_stats()['Glück'] / 100) # e.g., 10 luck = 10% bonus
 
-        gold_reward = int((random.randint(10, 50) + self.duration) * luck_bonus)
+        copper_reward = int((random.randint(50, 250) + self.duration * 10) * luck_bonus)
         xp_reward = int((random.randint(20, 40) + self.duration * 2) * luck_bonus)
 
         # Luck also slightly increases the chance of finding an item
@@ -61,4 +61,4 @@ class Quest:
         else:
             item_reward = None
 
-        return gold_reward, xp_reward, item_reward
+        return copper_reward, xp_reward, item_reward

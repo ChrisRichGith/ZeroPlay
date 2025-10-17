@@ -9,11 +9,11 @@ class Trader:
 
     def __init__(self):
         """Initializes the trader."""
-        self.inventory_upgrade_cost = 100
+        self.inventory_upgrade_cost = 1000 # Start cost: 10 silver
         self.upgrade_cost_increase_factor = 1.8
         self.potions_for_sale = [
-            Item("Kleiner Heiltrank", item_type="Verbrauchsgut", stats_boost={"LP": 50}, value=15),
-            Item("Kleiner Manatrank", item_type="Verbrauchsgut", stats_boost={"MP": 30}, value=20),
+            Item("Kleiner Heiltrank", item_type="Verbrauchsgut", stats_boost={"LP": 50}, value=25), # 25 copper
+            Item("Kleiner Manatrank", item_type="Verbrauchsgut", stats_boost={"MP": 30}, value=35), # 35 copper
         ]
 
     def sell_item(self, character, item_index):
@@ -29,7 +29,7 @@ class Trader:
         """
         if 0 <= item_index < len(character.inventory):
             item_to_sell = character.inventory.pop(item_index)
-            character.gold += item_to_sell.value
+            character.copper += item_to_sell.value
             return True
         return False
 
@@ -47,8 +47,8 @@ class Trader:
         Returns:
             bool: True if the upgrade was successful, False otherwise.
         """
-        if character.gold >= self.inventory_upgrade_cost:
-            character.gold -= self.inventory_upgrade_cost
+        if character.copper >= self.inventory_upgrade_cost:
+            character.copper -= self.inventory_upgrade_cost
             character.max_inventory_size += 5  # Increase inventory by 5 slots
 
             # Increase the cost for the next upgrade
@@ -72,17 +72,17 @@ class Trader:
         ]
 
         items_sold_count = len(items_to_sell)
-        gold_gained = 0
+        copper_gained = 0
 
         if not items_to_sell:
             return 0, 0
 
         for item in items_to_sell:
-            gold_gained += item.value
+            copper_gained += item.value
             character.inventory.remove(item)
 
-        character.gold += gold_gained
-        return items_sold_count, gold_gained
+        character.copper += copper_gained
+        return items_sold_count, copper_gained
 
     def buy_item(self, character, item_to_buy):
         """
@@ -98,9 +98,9 @@ class Trader:
         if len(character.inventory) >= character.max_inventory_size:
             return False, "Inventar ist voll."
 
-        if character.gold < item_to_buy.value:
+        if character.copper < item_to_buy.value:
             return False, "Nicht genug Gold."
 
-        character.gold -= item_to_buy.value
+        character.copper -= item_to_buy.value
         character.inventory.append(item_to_buy)
         return True, f"{item_to_buy.name} gekauft."

@@ -3,6 +3,7 @@
 Defines the Item class for all in-game items.
 """
 import random
+from utils import format_currency
 
 class Item:
     """Represents an item in the game with a name, type, value, and potential effects."""
@@ -16,7 +17,7 @@ class Item:
             item_type (str): The type of item ('Ausrüstung' or 'Verbrauchsgut').
             slot (str, optional): The equipment slot for 'Ausrüstung' type.
             stats_boost (dict, optional): Stat boosts or consumable effects (e.g., {'LP': 50}).
-            value (int): The gold value of the item.
+            value (int): The copper value of the item.
         """
         self.name = name
         self.item_type = item_type
@@ -26,21 +27,22 @@ class Item:
 
     def __str__(self):
         """Returns a string representation of the item."""
+        value_str = format_currency(self.value)
         if self.item_type == "Ausrüstung":
             boosts = []
             if self.stats_boost:
                 for stat, val in self.stats_boost.items():
                     boosts.append(f"{'+' if val >= 0 else ''}{val} {stat}")
             boost_str = ", ".join(boosts)
-            return f"{self.name} ({self.slot}) [{boost_str}] - {self.value} Gold"
+            return f"{self.name} ({self.slot}) [{boost_str}] - {value_str}"
         elif self.item_type == "Verbrauchsgut":
             effects = []
             if self.stats_boost:
                 for stat, val in self.stats_boost.items():
                     effects.append(f"Stellt {val} {stat} wieder her")
             effect_str = ", ".join(effects)
-            return f"{self.name} [{effect_str}] - {self.value} Gold"
-        return f"{self.name} - {self.value} Gold"
+            return f"{self.name} [{effect_str}] - {value_str}"
+        return f"{self.name} - {value_str}"
 
     def get_weighted_score(self, main_stat, main_stat_weight=1.5):
         """

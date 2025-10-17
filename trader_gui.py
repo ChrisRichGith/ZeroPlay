@@ -4,6 +4,7 @@ Defines the GUI for the Trader window.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
+from utils import format_currency
 
 class TraderWindow:
     """Manages the trader GUI window."""
@@ -107,8 +108,8 @@ class TraderWindow:
 
     def update_display(self):
         """Updates all display elements in the trader window."""
-        self.player_gold_var.set(self.player.gold)
-        self.upgrade_cost_var.set(f"Kosten: {self.trader.get_upgrade_cost()} Gold")
+        self.player_gold_var.set(format_currency(self.player.copper))
+        self.upgrade_cost_var.set(f"Kosten: {format_currency(self.trader.get_upgrade_cost())}")
 
         self.sell_listbox.delete(0, tk.END)
         for item in self.player.inventory:
@@ -140,11 +141,11 @@ class TraderWindow:
 
     def sell_all_non_upgrades(self):
         """Sells all non-upgrade items and shows a summary."""
-        items_sold, gold_gained = self.trader.sell_all_non_upgrades(self.player)
+        items_sold, copper_gained = self.trader.sell_all_non_upgrades(self.player)
 
         if items_sold > 0:
             messagebox.showinfo("Alles verkauft",
-                                f"{items_sold} Gegenstand/Gegenstände für insgesamt {gold_gained} Gold verkauft.",
+                                f"{items_sold} Gegenstand/Gegenstände für insgesamt {format_currency(copper_gained)} verkauft.",
                                 parent=self.window)
             self.update_display()
         else:

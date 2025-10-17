@@ -22,7 +22,7 @@ class Character:
         self.level = 1
         self.xp = 0
         self.xp_to_next_level = 100
-        self.gold = 0
+        self.copper = 0
         # Load base attributes from the selected class
         self.attributes = CLASSES.get(klasse, {}).get("attributes", {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}).copy()
         self.inventory = []
@@ -97,14 +97,14 @@ class Character:
         self.inventory.pop(item_index)
         return True, f"{item.name} benutzt."
 
-    def add_loot(self, gold, item):
+    def add_loot(self, copper, item):
         """
-        Adds gold and an item to the character's inventory if there is space.
+        Adds copper and an item to the character's inventory if there is space.
 
         Returns:
             bool: True if the item was added, False otherwise.
         """
-        self.gold += gold
+        self.copper += copper
         if item:
             if len(self.inventory) < self.max_inventory_size:
                 self.inventory.append(item)
