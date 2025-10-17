@@ -34,16 +34,27 @@ class Character:
         self.current_lp = 0
         self.max_mp = 0
         self.current_mp = 0
-        self.update_derived_stats() # Initial calculation
+        self.update_derived_stats(heal_on_update=True) # Initial calculation and full heal
 
-    def update_derived_stats(self):
-        """Calculates derived stats like LP and MP based on base attributes."""
+    def update_derived_stats(self, heal_on_update=False):
+        """
+        Calculates derived stats like LP and MP based on base attributes.
+        Does not heal the character unless specified (e.g., on level up).
+        """
         total_stats = self.get_total_stats()
+        old_max_lp = self.max_lp
+        old_max_mp = self.max_mp
+
         self.max_lp = 50 + total_stats['Stärke'] * 5
         self.max_mp = 30 + total_stats['Intelligenz'] * 3
-        # Simple regeneration after update
-        self.current_lp = self.max_lp
-        self.current_mp = self.max_mp
+
+        # Keep current values unless they exceed the new max
+        self.current_lp = min(self.current_lp, self.max_lp)
+        self.current_mp = min(self.current_mp, self.max_mp)
+
+        if heal_on_update:
+            self.current_lp = self.max_lp
+            self.current_mp = self.max_mp
 
     def _calculate_xp_for_next_level(self):
         """Calculates the XP needed for the next level."""
@@ -76,7 +87,7 @@ class Character:
             self.attributes[stat] += increase
             stat_increases.append(f"{stat} +{increase}")
 
-        self.update_derived_stats() # Recalculate LP/MP after level up
+        self.update_derived_stats(heal_on_update=True) # Recalculate LP/MP and heal on level up
         return stat_increases
 
     def use_item(self, item_index):
