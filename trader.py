@@ -2,6 +2,7 @@
 """
 Defines the Trader class for handling item selling and inventory upgrades.
 """
+from item import Item
 
 class Trader:
     """Manages all trading-related logic."""
