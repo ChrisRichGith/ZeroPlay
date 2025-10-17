@@ -342,16 +342,17 @@ def start_game_with_character_creation():
     dummy_root.withdraw()
 
     player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=dummy_root)
-    if not player_name: # Handle cancel or empty name
+    if not player_name:
         dummy_root.destroy()
         return None, None
 
+    # This was the point of failure. The class selection needs the dummy_root to exist.
     player_class = choose_class(dummy_root)
-    if not player_class: # Handle cancel
+    if not player_class:
         dummy_root.destroy()
         return None, None
 
-    dummy_root.destroy()
+    dummy_root.destroy() # Now it's safe to destroy the root.
     return player_name, player_class
 
 if __name__ == '__main__':
