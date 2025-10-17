@@ -14,7 +14,7 @@ class Game:
     """The main controller for the application, manages scenes."""
     def __init__(self, root):
         self.root = root
-        self.root.title("Progress Quest 2.0")
+        self.root.title("Chronicle of the Idle Hero")
         self.root.geometry("800x750")
 
         self.current_frame = None

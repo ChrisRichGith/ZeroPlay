@@ -33,11 +33,11 @@ class StartMenu(ttk.Frame):
 
     def create_widgets(self):
         self.master.geometry("600x500") # Resize the main window
-        self.master.title("Progress Quest 2.0 - Hauptmenü")
+        self.master.title("Chronicle of the Idle Hero - Hauptmenü")
 
         # Introduction Text
         intro_text_content = (
-            "Willkommen bei Progress Quest 2.0!\n\n"
+            "Willkommen bei Chronicle of the Idle Hero!\n\n"
             "Wähle einen Spielstand oder erstelle einen neuen Helden. "
             "Dein Held wird automatisch Quests erledigen. Deine Aufgabe ist es, "
             "seine Ausrüstung zu verwalten und Tränke zu kaufen.\n\n"
