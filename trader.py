@@ -66,7 +66,10 @@ class Trader:
         Returns:
             tuple: A tuple containing the number of items sold and the total gold gained.
         """
-        items_to_sell = [item for item in character.inventory if not character.is_upgrade(item)]
+        items_to_sell = [
+            item for item in character.inventory
+            if item.item_type == "Ausrüstung" and not character.is_upgrade(item)
+        ]
 
         items_sold_count = len(items_to_sell)
         gold_gained = 0
