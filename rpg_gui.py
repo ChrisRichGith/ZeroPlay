@@ -16,9 +16,16 @@ from save_load_system import save_game
 AVAILABLE_QUESTS = [
     "Rette eine Prinzessin aus einem anderen Schloss",
     "Sammle 10 leere Flaschen für den Alchemisten",
-    "Polere die Rüstung des Königs (ohne Bezahlung)",
+    "Poliere die Rüstung des Königs (ohne Bezahlung)",
     "Entwirre die Kopfhörer des Barden",
-    "Finde das Rezept für ewige Jugend (und verliere es wieder)"
+    "Finde das Rezept für ewige Jugend (und verliere es wieder)",
+    "Bringe dem königlichen Papagei das Fluchen bei",
+    "Zähle alle Sandkörner am Strand",
+    "Sortiere die Bibliothek nach der Farbe der Buchrücken",
+    "Überzeuge einen Drachen, dass er nur ein überdimensionierter Wellensittich ist",
+    "Finde heraus, warum Goblins immer so schlechte Laune haben",
+    "Eskortiere eine sehr langsame Schildkröte über eine sehr breite Straße",
+    "Störe eine wichtige Zeremonie durch lautes Kauen"
 ]
 
 class RpgGui(ttk.Frame):
