@@ -27,8 +27,8 @@ class TraderWindow:
         # Create a Toplevel window that exists on top of the main window
         self.window = tk.Toplevel(parent)
         self.window.title("Händler")
-        self.window.geometry("500x400")
-        self.window.minsize(400, 300)
+        self.window.geometry("600x500")
+        self.window.minsize(500, 400)
 
         # Ensure closing the window calls our custom function
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)

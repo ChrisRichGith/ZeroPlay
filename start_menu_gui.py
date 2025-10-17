@@ -32,7 +32,7 @@ class StartMenu(ttk.Frame):
         }
 
     def create_widgets(self):
-        self.master.geometry("600x500") # Resize the main window
+        self.master.geometry("700x550") # Resize the main window
         self.master.title("Chronicle of the Idle Hero - Hauptmenü")
 
         # Introduction Text
