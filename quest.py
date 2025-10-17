@@ -5,20 +5,7 @@ Defines the Quest class, which handles quest progression and rewards.
 import random
 import time
 from item import Item
-
-# Vordefinierte Liste möglicher Items als Loot
-# In einer größeren Anwendung würde dies aus einer Datenbank oder Konfigurationsdatei geladen
-POSSIBLE_LOOT = [
-    Item("Verfluchte Geige", slot="Waffe", stats_boost={"Intelligenz": 5, "Glück": -2}, value=50),
-    Item("Helm des Wahnsinns", slot="Kopf", stats_boost={"Stärke": 3, "Intelligenz": -1}, value=35),
-    Item("Rostige Brustplatte", slot="Brust", stats_boost={"Stärke": 1}, value=10),
-    Item("Glücksfeder", slot="Kopf", stats_boost={"Glück": 2}, value=25),
-    Item("Schwert der Mittelmäßigkeit", slot="Waffe", stats_boost={"Stärke": 2}, value=20),
-    Item("Seidenschal der Diplomatie", slot="Kopf", stats_boost={"Intelligenz": 2}, value=22),
-    Item("Solide Lederweste", slot="Brust", stats_boost={"Stärke": 2}, value=18),
-    Item("Kleiner Heiltrank", item_type="Verbrauchsgut", stats_boost={"LP": 50}, value=15),
-    Item("Kleiner Manatrank", item_type="Verbrauchsgut", stats_boost={"MP": 30}, value=20),
-]
+from loot_system import generate_item_for_level
 
 class Quest:
     """Represents a quest that automatically progresses and grants rewards."""
@@ -70,7 +57,7 @@ class Quest:
         # Luck also slightly increases the chance of finding an item
         item_chance = 0.7 + (character.get_total_stats()['Glück'] / 200) # 10 luck = +5% chance
         if random.random() < min(0.95, item_chance): # Cap at 95%
-            item_reward = random.choice(POSSIBLE_LOOT)
+            item_reward = generate_item_for_level(character.level)
         else:
             item_reward = None
 
