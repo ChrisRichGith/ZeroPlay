@@ -127,11 +127,17 @@ class Character:
             return False
 
         equipped_item = self.equipment.get(item_from_inventory.slot)
+        main_stat = CLASSES[self.klasse]['main_stat']
 
         if not equipped_item:
-            return True
+            # Any item is an upgrade if the slot is empty, provided it has a positive score
+            return item_from_inventory.get_weighted_score(main_stat) > 0
 
-        return item_from_inventory.get_total_bonus() > equipped_item.get_total_bonus()
+        # Compare the weighted scores
+        new_item_score = item_from_inventory.get_weighted_score(main_stat)
+        equipped_item_score = equipped_item.get_weighted_score(main_stat)
+
+        return new_item_score > equipped_item_score
 
     def equip(self, item_index):
         """

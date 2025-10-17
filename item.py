@@ -42,8 +42,24 @@ class Item:
             return f"{self.name} [{effect_str}] - {self.value} Gold"
         return f"{self.name} - {self.value} Gold"
 
-    def get_total_bonus(self):
-        """Calculates the sum of all stat boosts of the item."""
+    def get_weighted_score(self, main_stat, main_stat_weight=1.5):
+        """
+        Calculates a weighted score for an item based on a main stat.
+
+        Args:
+            main_stat (str): The primary stat for the character class.
+            main_stat_weight (float): The multiplier for the main stat.
+
+        Returns:
+            float: The calculated weighted score of the item.
+        """
         if not self.stats_boost:
             return 0
-        return sum(self.stats_boost.values())
+
+        score = 0
+        for stat, value in self.stats_boost.items():
+            if stat == main_stat:
+                score += value * main_stat_weight
+            else:
+                score += value # Other stats have a weight of 1
+        return score
