@@ -21,15 +21,13 @@ AVAILABLE_QUESTS = [
     "Finde das Rezept für ewige Jugend (und verliere es wieder)"
 ]
 
-class RpgGui:
-    """Manages the main GUI window of the RPG."""
+class RpgGui(ttk.Frame):
+    """Manages the main game GUI frame."""
 
-    def __init__(self, root, character):
+    def __init__(self, parent, character, callbacks):
         """Initializes the GUI with a character object."""
-        self.root = root
-        self.root.title("Progress Quest 2.0 - GUI Edition")
-        self.root.geometry("800x750") # Increased height
-        self.root.minsize(700, 650) # Increased min height
+        super().__init__(parent)
+        self.callbacks = callbacks # e.g., {'save_and_quit': on_save_quit}
 
         self.player = character
         self.trader = Trader()
@@ -40,8 +38,6 @@ class RpgGui:
         self._setup_string_vars()
         self.create_widgets()
         self.update_display()
-
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def on_closing(self):
         """Handles the window closing event, saves the game."""
@@ -331,34 +327,5 @@ class RpgGui:
         """Manages the game over sequence."""
         self.game_over = True
         messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
-        self.root.destroy() # Close the window, which allows main.py to loop
-
-
-from class_selection_gui import choose_class
-
-def start_game_with_character_creation():
-    """Handles character creation and returns player data."""
-    dummy_root = tk.Tk()
-    dummy_root.withdraw()
-
-    player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=dummy_root)
-    if not player_name:
-        dummy_root.destroy()
-        return None, None
-
-    # This was the point of failure. The class selection needs the dummy_root to exist.
-    player_class = choose_class(dummy_root)
-    if not player_class:
-        dummy_root.destroy()
-        return None, None
-
-    dummy_root.destroy() # Now it's safe to destroy the root.
-    return player_name, player_class
-
-if __name__ == '__main__':
-    # This part is for testing the GUI directly
-    p_name, p_class = start_game_with_character_creation()
-    if p_name and p_class:
-        root = tk.Tk()
-        app = RpgGui(root, p_name, p_class)
-        root.mainloop()
+        if self.callbacks['game_over']:
+            self.callbacks['game_over']()

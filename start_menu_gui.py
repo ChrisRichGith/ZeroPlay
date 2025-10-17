@@ -1,33 +1,27 @@
 # start_menu_gui.py
 """
-Defines the GUI for the main start menu.
+Defines the GUI Frame for the main start menu.
 """
 import tkinter as tk
 from tkinter import ttk
 from save_load_system import get_save_files
 
-class StartMenu:
-    """Manages the start menu GUI."""
+class StartMenu(ttk.Frame):
+    """Manages the start menu frame."""
 
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Progress Quest 2.0 - Hauptmenü")
-        self.root.geometry("400x300")
-        self.root.resizable(False, False)
+    def __init__(self, parent, callbacks):
+        super().__init__(parent)
+        self.callbacks = callbacks # e.g., {'load': on_load, 'new': on_new, 'quit': on_quit}
 
-        self.choice = None # To store user's action: 'load', 'new', 'quit'
         self.selected_save = None
 
         self.create_widgets()
 
     def create_widgets(self):
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(self, text="Verfügbare Spielstände:", font=("Helvetica", 12)).pack(pady=5)
 
-        ttk.Label(main_frame, text="Verfügbare Spielstände:", font=("Helvetica", 12)).pack(pady=5)
-
-        list_frame = ttk.Frame(main_frame)
-        list_frame.pack(fill=tk.BOTH, expand=True)
+        list_frame = ttk.Frame(self)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.save_listbox = tk.Listbox(list_frame)
         self.save_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -39,16 +33,16 @@ class StartMenu:
         self.populate_save_list()
         self.save_listbox.bind('<<ListboxSelect>>', self.on_select)
 
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
+        button_frame = ttk.Frame(self)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.load_button = ttk.Button(button_frame, text="Laden", command=self.load_game, state=tk.DISABLED)
         self.load_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
-        new_game_button = ttk.Button(button_frame, text="Neues Spiel", command=self.new_game)
+        new_game_button = ttk.Button(button_frame, text="Neues Spiel", command=self.callbacks['new'])
         new_game_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
-        quit_button = ttk.Button(button_frame, text="Beenden", command=self.quit_game)
+        quit_button = ttk.Button(button_frame, text="Beenden", command=self.callbacks['quit'])
         quit_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
     def populate_save_list(self):
@@ -61,18 +55,11 @@ class StartMenu:
         """Enables the load button when a save is selected."""
         if self.save_listbox.curselection():
             self.load_button.config(state=tk.NORMAL)
+            self.selected_save = self.save_listbox.get(self.save_listbox.curselection())
         else:
             self.load_button.config(state=tk.DISABLED)
+            self.selected_save = None
 
     def load_game(self):
-        self.choice = 'load'
-        self.selected_save = self.save_listbox.get(self.save_listbox.curselection())
-        self.root.destroy()
-
-    def new_game(self):
-        self.choice = 'new'
-        self.root.destroy()
-
-    def quit_game(self):
-        self.choice = 'quit'
-        self.root.destroy()
+        if self.selected_save and self.callbacks['load']:
+            self.callbacks['load'](self.selected_save)
