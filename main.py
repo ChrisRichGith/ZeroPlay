@@ -6,6 +6,7 @@ import tkinter as tk
 from start_menu_gui import StartMenu
 from rpg_gui import RpgGui, start_game_with_character_creation
 from save_load_system import load_game
+from character import Character # Import Character class
 
 def main():
     """
@@ -24,7 +25,6 @@ def main():
     elif choice == 'new':
         player_name, player_class = start_game_with_character_creation()
         if player_name and player_class:
-            from character import Character # Import here to avoid circular dependency issues
             character = Character(player_name, player_class)
     elif choice == 'quit':
         return # Exit the application
