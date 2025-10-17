@@ -1,50 +1,38 @@
 # main.py
 """
-The main entry point for the text-based RPG.
-This script now launches the graphical user interface.
+Main entry point for the RPG. Launches the start menu and handles game flow.
 """
+import tkinter as tk
+from start_menu_gui import StartMenu
+from rpg_gui import RpgGui, start_game_with_character_creation
+from save_load_system import load_game
 
 def main():
     """
-    Launches the GUI version of the RPG in a loop to allow restarting.
+    Handles the main game flow: start menu -> character creation/load -> game.
     """
-    while True:
-        game_instance = None
-        try:
-            from rpg_gui import RpgGui, start_game_with_character_creation
-            print("GUI-Modul erfolgreich geladen. Starte Charaktererstellung...")
+    # Show start menu
+    root = tk.Tk()
+    start_menu = StartMenu(root)
+    root.mainloop()
 
-            player_name, player_class = start_game_with_character_creation()
+    choice = start_menu.choice
+    character = None
 
-            if player_name is None or player_class is None:
-                print("Charaktererstellung abgebrochen. Spiel wird beendet.")
-                break # Exit the loop if user cancels creation
+    if choice == 'load':
+        character = load_game(start_menu.selected_save)
+    elif choice == 'new':
+        player_name, player_class = start_game_with_character_creation()
+        if player_name and player_class:
+            from character import Character # Import here to avoid circular dependency issues
+            character = Character(player_name, player_class)
+    elif choice == 'quit':
+        return # Exit the application
 
-            import tkinter as tk
-            root_window = tk.Tk()
-            game_instance = RpgGui(root_window, player_name, player_class)
-            root_window.mainloop()
-
-            if not game_instance.game_over:
-                # If window was closed manually, not via game over
-                break
-
-        except ImportError as e:
-            print("--- FEHLER BEIM STARTEN DER GUI ---")
-            print(f"Details: {e}")
-            print("\nEs scheint, als ob die GUI-Komponente nicht gefunden werden konnte.")
-            print("Stelle sicher, dass die Datei 'rpg_gui.py' im selben Verzeichnis liegt.")
-            break # Exit loop on import error
-        except Exception as e:
-            # This will catch other errors, like the TclError if tkinter is not set up correctly
-            print("--- EIN UNERWARTETER FEHLER IST AUFGETRETEN ---")
-            print(f"Fehlertyp: {type(e).__name__}")
-            print(f"Details: {e}")
-            print("\nMögliche Ursachen:")
-            print("1. Deine Python-Installation enthält möglicherweise kein 'tkinter'-Modul.")
-            print("   (Bei Linux kann dies oft mit 'sudo apt-get install python3-tk' nachinstalliert werden).")
-            print("2. Du führst das Skript in einer Umgebung ohne grafische Oberfläche aus (z.B. über SSH ohne X-Forwarding).")
-            break # Exit loop on other critical errors
+    if character:
+        game_root = tk.Tk()
+        app = RpgGui(game_root, character)
+        game_root.mainloop()
 
 if __name__ == "__main__":
     main()

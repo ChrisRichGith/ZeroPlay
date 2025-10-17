@@ -10,6 +10,7 @@ from character import Character
 from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
+from save_load_system import save_game
 
 # Liste verfügbarer Quests
 AVAILABLE_QUESTS = [
@@ -23,14 +24,14 @@ AVAILABLE_QUESTS = [
 class RpgGui:
     """Manages the main GUI window of the RPG."""
 
-    def __init__(self, root, player_name, player_class):
-        """Initializes the GUI with a created character."""
+    def __init__(self, root, character):
+        """Initializes the GUI with a character object."""
         self.root = root
         self.root.title("Progress Quest 2.0 - GUI Edition")
         self.root.geometry("800x750") # Increased height
         self.root.minsize(700, 650) # Increased min height
 
-        self.player = Character(player_name, player_class)
+        self.player = character
         self.trader = Trader()
         self.current_quest = None
         self.is_auto_questing = False
@@ -39,6 +40,14 @@ class RpgGui:
         self._setup_string_vars()
         self.create_widgets()
         self.update_display()
+
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def on_closing(self):
+        """Handles the window closing event, saves the game."""
+        if not self.game_over:
+            save_game(self.player)
+        self.root.destroy()
 
     def _setup_string_vars(self):
         """Creates tkinter StringVars to link data to labels."""
