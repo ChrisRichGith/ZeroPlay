@@ -27,8 +27,8 @@ class RpgGui:
         """Initializes the GUI with a created character."""
         self.root = root
         self.root.title("Progress Quest 2.0 - GUI Edition")
-        self.root.geometry("800x600")
-        self.root.minsize(700, 550)
+        self.root.geometry("800x750") # Increased height
+        self.root.minsize(700, 650) # Increased min height
 
         self.player = Character(player_name, player_class)
         self.trader = Trader()
