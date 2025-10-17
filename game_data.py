@@ -22,29 +22,31 @@ CLASSES = {
 }
 
 ITEM_BLUEPRINTS = {
+    # Nomen: (Name, Artikel)
     "Waffe": [
-        {"name": "Schwert", "base_stat": "Stärke", "base_bonus": 2},
-        {"name": "Stab", "base_stat": "Intelligenz", "base_bonus": 2},
-        {"name": "Dolch", "base_stat": "Glück", "base_bonus": 1},
+        {"name": ("Schwert", "n"), "base_stat": "Stärke", "base_bonus": 2},
+        {"name": ("Stab", "m"), "base_stat": "Intelligenz", "base_bonus": 2},
+        {"name": ("Dolch", "m"), "base_stat": "Glück", "base_bonus": 1},
     ],
     "Kopf": [
-        {"name": "Helm", "base_stat": "Stärke", "base_bonus": 1},
-        {"name": "Hut", "base_stat": "Intelligenz", "base_bonus": 1},
-        {"name": "Kapuze", "base_stat": "Glück", "base_bonus": 1},
+        {"name": ("Helm", "m"), "base_stat": "Stärke", "base_bonus": 1},
+        {"name": ("Hut", "m"), "base_stat": "Intelligenz", "base_bonus": 1},
+        {"name": ("Kapuze", "f"), "base_stat": "Glück", "base_bonus": 1},
     ],
     "Brust": [
-        {"name": "Plattenpanzer", "base_stat": "Stärke", "base_bonus": 3},
-        {"name": "Robe", "base_stat": "Intelligenz", "base_bonus": 3},
-        {"name": "Lederwams", "base_stat": "Glück", "base_bonus": 2},
+        {"name": ("Plattenpanzer", "m"), "base_stat": "Stärke", "base_bonus": 3},
+        {"name": ("Robe", "f"), "base_stat": "Intelligenz", "base_bonus": 3},
+        {"name": ("Lederwams", "m"), "base_stat": "Glück", "base_bonus": 2},
     ]
 }
 
+# Adjektiv-Endungen für (m, f, n) Artikel
 ITEM_PREFIXES = {
-    -2: "Kaputter",
-    -1: "Minderwertiger",
-    0: "Gewöhnlicher",
-    1: "Verbesserter",
-    2: "Seltener",
-    3: "Epischer",
-    4: "Legendärer"
+    -2: "Kaputt",
+    -1: "Minderwertig",
+    0: "Gewöhnlich",
+    1: "Verbessert",
+    2: "Selten",
+    3: "Episch",
+    4: "Legendär"
 }

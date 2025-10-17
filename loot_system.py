@@ -24,9 +24,25 @@ def generate_item_for_level(level):
     # Higher player level increases the chance for better prefixes
     power_roll = random.randint(-2, 4) + int(level / 5)
     power_level = max(min(power_roll, 4), -2) # Clamp between -2 and 4
-    prefix = ITEM_PREFIXES.get(power_level, "Gewöhnlicher")
 
-    # 3. Calculate stat bonus
+    # 3. Assemble the item name with correct grammar
+    base_name, article = blueprint["name"]
+    adjective = ITEM_PREFIXES.get(power_level, "Gewöhnlich")
+
+    # German adjective endings
+    if article == 'm':
+        ending = "er"
+    elif article == 'f':
+        ending = "e"
+    elif article == 'n':
+        ending = "es"
+    else:
+        ending = "e" # Default
+
+    prefix = adjective + ending
+    item_name = f"{prefix} {base_name}"
+
+    # 4. Calculate stat bonus
     base_bonus = blueprint["base_bonus"]
     # Formula: Bonus scales with level and is modified by power level
     stat_bonus = int(base_bonus + (level * 0.8) + (power_level * 2))
@@ -37,7 +53,6 @@ def generate_item_for_level(level):
     value = max(1, value) # Ensure value is at least 1
 
     # 5. Assemble the item
-    item_name = f"{prefix} {blueprint['name']}"
     stats_boost = {blueprint["base_stat"]: stat_bonus}
 
     return Item(name=item_name, slot=slot, stats_boost=stats_boost, value=value)
