@@ -10,6 +10,10 @@ class Trader:
         """Initializes the trader."""
         self.inventory_upgrade_cost = 100
         self.upgrade_cost_increase_factor = 1.8
+        self.potions_for_sale = [
+            Item("Kleiner Heiltrank", item_type="Verbrauchsgut", stats_boost={"LP": 50}, value=15),
+            Item("Kleiner Manatrank", item_type="Verbrauchsgut", stats_boost={"MP": 30}, value=20),
+        ]
 
     def sell_item(self, character, item_index):
         """
@@ -75,3 +79,24 @@ class Trader:
 
         character.gold += gold_gained
         return items_sold_count, gold_gained
+
+    def buy_item(self, character, item_to_buy):
+        """
+        Allows the character to buy an item from the trader.
+
+        Args:
+            character (Character): The player character.
+            item_to_buy (Item): The item instance to be bought.
+
+        Returns:
+            bool: True if the purchase was successful, False otherwise.
+        """
+        if len(character.inventory) >= character.max_inventory_size:
+            return False, "Inventar ist voll."
+
+        if character.gold < item_to_buy.value:
+            return False, "Nicht genug Gold."
+
+        character.gold -= item_to_buy.value
+        character.inventory.append(item_to_buy)
+        return True, f"{item_to_buy.name} gekauft."

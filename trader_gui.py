@@ -63,29 +63,47 @@ class TraderWindow:
         self.upgrade_button.pack(side=tk.RIGHT)
         ttk.Label(top_frame, textvariable=self.upgrade_cost_var).pack(side=tk.RIGHT, padx=5)
 
-        # Inventory list
-        inv_frame = ttk.LabelFrame(main_frame, text="Inventar zum Verkaufen", padding="10")
-        inv_frame.grid(row=1, column=0, sticky="nsew")
-        inv_frame.rowconfigure(0, weight=1)
-        inv_frame.columnconfigure(0, weight=1)
+        # Paned Window for buy/sell sections
+        paned_window = ttk.PanedWindow(main_frame, orient=tk.VERTICAL)
+        paned_window.grid(row=1, column=0, sticky="nsew")
 
-        self.sell_listbox = tk.Listbox(inv_frame)
+        # --- Sell Frame ---
+        sell_frame = ttk.LabelFrame(paned_window, text="Dein Inventar (Verkaufen)", padding="10")
+        paned_window.add(sell_frame, weight=1)
+        sell_frame.rowconfigure(0, weight=1)
+        sell_frame.columnconfigure(0, weight=1)
+        self.sell_listbox = tk.Listbox(sell_frame)
         self.sell_listbox.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(inv_frame, orient=tk.VERTICAL, command=self.sell_listbox.yview)
-        self.sell_listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.grid(row=0, column=1, sticky="ns")
+        sell_scrollbar = ttk.Scrollbar(sell_frame, orient=tk.VERTICAL, command=self.sell_listbox.yview)
+        self.sell_listbox.config(yscrollcommand=sell_scrollbar.set)
+        sell_scrollbar.grid(row=0, column=1, sticky="ns")
 
-        # Bottom frame for sell button
+        # --- Buy Frame ---
+        buy_frame = ttk.LabelFrame(paned_window, text="Händler-Angebot (Kaufen)", padding="10")
+        paned_window.add(buy_frame, weight=1)
+        buy_frame.rowconfigure(0, weight=1)
+        buy_frame.columnconfigure(0, weight=1)
+        self.buy_listbox = tk.Listbox(buy_frame)
+        self.buy_listbox.grid(row=0, column=0, sticky="nsew")
+        buy_scrollbar = ttk.Scrollbar(buy_frame, orient=tk.VERTICAL, command=self.buy_listbox.yview)
+        self.buy_listbox.config(yscrollcommand=buy_scrollbar.set)
+        buy_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Bottom frame for action buttons
         bottom_frame = ttk.Frame(main_frame)
         bottom_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         bottom_frame.columnconfigure(0, weight=1)
         bottom_frame.columnconfigure(1, weight=1)
 
-        self.sell_button = ttk.Button(bottom_frame, text="Ausgewählten Gegenstand verkaufen", command=self.sell_item)
-        self.sell_button.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        sell_buttons_frame = ttk.Frame(bottom_frame)
+        sell_buttons_frame.grid(row=0, column=0, sticky="ew")
+        self.sell_button = ttk.Button(sell_buttons_frame, text="Verkaufen", command=self.sell_item)
+        self.sell_button.pack(fill=tk.X, expand=True, side=tk.LEFT, padx=(0, 5))
+        self.sell_all_button = ttk.Button(sell_buttons_frame, text="Schrott verkaufen", command=self.sell_all_non_upgrades)
+        self.sell_all_button.pack(fill=tk.X, expand=True, side=tk.LEFT)
 
-        self.sell_all_button = ttk.Button(bottom_frame, text="Allen Schrott verkaufen", command=self.sell_all_non_upgrades)
-        self.sell_all_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
+        self.buy_button = ttk.Button(bottom_frame, text="Kaufen", command=self.buy_item)
+        self.buy_button.grid(row=0, column=1, sticky="ew", padx=(10, 0))
 
     def update_display(self):
         """Updates all display elements in the trader window."""
@@ -96,9 +114,13 @@ class TraderWindow:
         for item in self.player.inventory:
             self.sell_listbox.insert(tk.END, str(item))
 
+        self.buy_listbox.delete(0, tk.END)
+        for item in self.trader.potions_for_sale:
+            self.buy_listbox.insert(tk.END, str(item))
+
         # Disable button if player can't afford it
-        can_afford = self.player.gold >= self.trader.get_upgrade_cost()
-        self.upgrade_button.config(state=tk.NORMAL if can_afford else tk.DISABLED)
+        can_afford_upgrade = self.player.gold >= self.trader.get_upgrade_cost()
+        self.upgrade_button.config(state=tk.NORMAL if can_afford_upgrade else tk.DISABLED)
 
     def sell_item(self):
         """Sells the selected item."""
@@ -139,6 +161,23 @@ class TraderWindow:
             self.update_display()
         else:
             messagebox.showerror("Nicht genug Gold", "Du kannst dir dieses Upgrade nicht leisten.", parent=self.window)
+
+    def buy_item(self):
+        """Buys the selected item from the trader."""
+        selected_indices = self.buy_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Kaufen", "Bitte wähle einen Gegenstand zum Kaufen aus.", parent=self.window)
+            return
+
+        item_index = selected_indices[0]
+        item_to_buy = self.trader.potions_for_sale[item_index]
+
+        success, message = self.trader.buy_item(self.player, item_to_buy)
+
+        if success:
+            self.update_display()
+        else:
+            messagebox.showerror("Kauf fehlgeschlagen", message, parent=self.window)
 
     def close_window(self):
         """Handles the window closing event."""

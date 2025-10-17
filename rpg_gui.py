@@ -84,13 +84,17 @@ class RpgGui:
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
-        # XP Progress Bar
-        xp_frame = ttk.LabelFrame(char_frame, text="Erfahrung", padding="5")
-        xp_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        self.xp_bar = ttk.Progressbar(xp_frame, orient='horizontal', mode='determinate')
-        self.xp_bar.pack(fill=tk.X, expand=True)
-        self.xp_label_var = tk.StringVar()
-        ttk.Label(xp_frame, textvariable=self.xp_label_var, anchor="center").pack()
+        # LP/MP/XP Bars
+        for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
+            frame = ttk.LabelFrame(char_frame, text=text, padding=5)
+            frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+            bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
+            bar.pack(fill=tk.X, expand=True)
+            label_var = tk.StringVar()
+            ttk.Label(frame, textvariable=label_var, anchor="center").pack()
+            setattr(self, f"{var_name}_bar", bar)
+            setattr(self, f"{var_name}_label_var", label_var)
+
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
@@ -107,6 +111,9 @@ class RpgGui:
 
         self.equip_button = ttk.Button(actions_frame, text="Gegenstand ausrüsten", command=self.equip_item)
         self.equip_button.pack(fill=tk.X, pady=5)
+
+        self.use_button = ttk.Button(actions_frame, text="Gegenstand benutzen", command=self.use_item)
+        self.use_button.pack(fill=tk.X, pady=5)
 
         # Quest Progress
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
@@ -133,6 +140,9 @@ class RpgGui:
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
+        # Update button states when selection changes
+        self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
+
     def update_display(self):
         """Updates all GUI elements with the current player data."""
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
@@ -157,15 +167,18 @@ class RpgGui:
             else:
                 self.inventory_listbox.itemconfig(i, {'bg': 'white'})
 
-        # Update XP Bar
+        # Update LP/MP/XP Bars
+        self.lp_label_var.set(f"{self.player.current_lp} / {self.player.max_lp} LP")
+        self.lp_bar['value'] = (self.player.current_lp / self.player.max_lp) * 100 if self.player.max_lp > 0 else 0
+
+        self.mp_label_var.set(f"{self.player.current_mp} / {self.player.max_mp} MP")
+        self.mp_bar['value'] = (self.player.current_mp / self.player.max_mp) * 100 if self.player.max_mp > 0 else 0
+
         self.xp_label_var.set(f"{self.player.xp} / {self.player.xp_to_next_level} XP")
-        self.xp_bar['value'] = (self.player.xp / self.player.xp_to_next_level) * 100
+        self.xp_bar['value'] = (self.player.xp / self.player.xp_to_next_level) * 100 if self.player.xp_to_next_level > 0 else 0
 
         # Disable/Enable buttons based on state
-        is_questing = self.current_quest is not None
-        self.quest_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
-        self.trader_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
-        self.auto_quest_button.config(state=tk.DISABLED if is_questing and not self.is_auto_questing else tk.NORMAL)
+        self.update_button_states()
 
         self.root.update_idletasks()
 
@@ -205,23 +218,19 @@ class RpgGui:
         """Advances quest progress and updates the GUI."""
         if self.current_quest is None: return
 
-        if self.current_quest.is_complete():
-            gold, xp, item = self.current_quest._generate_reward()
+        self.current_quest.advance(self.player)
 
-            # Add loot and XP
+        if self.current_quest.is_complete():
+            gold, xp, item = self.current_quest.generate_reward(self.player)
+
             item_added = self.player.add_loot(gold, item)
             level_up_info = self.player.add_xp(xp)
 
-            # Build messages
             loot_message = f"Loot: {gold} Gold, {xp} XP"
             if item:
-                if item_added:
-                    loot_message += f" und '{item.name}'"
-                else:
-                    loot_message += f" (aber '{item.name}' passte nicht ins Inventar!)"
+                loot_message += f" und '{item.name}'" if item_added else f" (aber '{item.name}' passte nicht ins Inventar!)"
             self.quest_status_var.set(loot_message)
 
-            # Show level up message if applicable
             if level_up_info:
                 level_up_summary = f"Level Up! Du bist jetzt Level {self.player.level}!\n\nAttribut-Boni:\n" + "\n".join(level_up_info)
                 messagebox.showinfo("Level Aufstieg!", level_up_summary)
@@ -231,13 +240,11 @@ class RpgGui:
             self.progress_bar['value'] = 0
 
             if self.is_auto_questing:
-                self.root.after(1000, self.start_quest) # Start next quest after a delay
-
+                self.root.after(1000, self.start_quest)
         else:
-            self.current_quest.progress += 1
             progress_percent = (self.current_quest.progress / self.current_quest.duration) * 100
             self.progress_bar['value'] = progress_percent
-            self.root.after(150, self.advance_quest) # Schedule next update
+            self.root.after(150, self.advance_quest)
 
         self.update_display()
 
@@ -250,6 +257,45 @@ class RpgGui:
         item_index = selected_indices[0]
         self.player.equip(item_index)
         self.update_display()
+
+    def use_item(self):
+        """Uses the selected item from the inventory."""
+        selected_indices = self.inventory_listbox.curselection()
+        if not selected_indices:
+            return # Should not happen as button is disabled
+
+        item_index = selected_indices[0]
+        success, message = self.player.use_item(item_index)
+        if not success:
+            messagebox.showwarning("Fehler", message)
+        self.update_display()
+
+    def update_button_states(self, event=None):
+        """Updates the state of buttons based on game state and selection."""
+        is_questing = self.current_quest is not None
+        selected_indices = self.inventory_listbox.curselection()
+
+        self.quest_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
+        self.trader_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
+        self.auto_quest_button.config(state=tk.DISABLED if is_questing and not self.is_auto_questing else tk.NORMAL)
+
+        if not selected_indices:
+            self.equip_button.config(state=tk.DISABLED)
+            self.use_button.config(state=tk.DISABLED)
+            return
+
+        item_index = selected_indices[0]
+        selected_item = self.player.inventory[item_index]
+
+        if selected_item.item_type == "Ausrüstung":
+            self.equip_button.config(state=tk.NORMAL)
+            self.use_button.config(state=tk.DISABLED)
+        elif selected_item.item_type == "Verbrauchsgut":
+            self.equip_button.config(state=tk.DISABLED)
+            self.use_button.config(state=tk.NORMAL)
+        else:
+            self.equip_button.config(state=tk.DISABLED)
+            self.use_button.config(state=tk.DISABLED)
 
     def open_trader_window(self):
         """Opens the trader interface."""

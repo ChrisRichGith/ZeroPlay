@@ -35,9 +35,26 @@ class Character:
         self.xp_to_next_level = 100
         self.gold = 0
         self.attributes = {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}
+
+        # Derived stats
+        self.max_lp = 0
+        self.current_lp = 0
+        self.max_mp = 0
+        self.current_mp = 0
+        self.update_derived_stats() # Initial calculation
+
         self.inventory = []
         self.max_inventory_size = 10
         self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
+
+    def update_derived_stats(self):
+        """Calculates derived stats like LP and MP based on base attributes."""
+        total_stats = self.get_total_stats()
+        self.max_lp = 50 + total_stats['Stärke'] * 5
+        self.max_mp = 30 + total_stats['Intelligenz'] * 3
+        # Simple regeneration after update
+        self.current_lp = self.max_lp
+        self.current_mp = self.max_mp
 
     def _calculate_xp_for_next_level(self):
         """Calculates the XP needed for the next level."""
@@ -73,7 +90,26 @@ class Character:
             self.attributes[stat] += increase
             stat_increases.append(f"{stat} +{increase}")
 
+        self.update_derived_stats() # Recalculate LP/MP after level up
         return stat_increases
+
+    def use_item(self, item_index):
+        """Uses a consumable item from the inventory."""
+        if not (0 <= item_index < len(self.inventory)):
+            return False, "Ungültiger Gegenstand."
+
+        item = self.inventory[item_index]
+        if item.item_type != "Verbrauchsgut":
+            return False, "Dieser Gegenstand kann nicht benutzt werden."
+
+        effect = item.stats_boost
+        if "LP" in effect:
+            self.current_lp = min(self.max_lp, self.current_lp + effect["LP"])
+        if "MP" in effect:
+            self.current_mp = min(self.max_mp, self.current_mp + effect["MP"])
+
+        self.inventory.pop(item_index)
+        return True, f"{item.name} benutzt."
 
     def add_loot(self, gold, item):
         """
@@ -134,6 +170,7 @@ class Character:
                 # Neues Item ausrüsten
                 self.equipment[slot] = item_to_equip
                 self.inventory.pop(item_index)
+                self.update_derived_stats() # Recalculate LP/MP after equipping
                 # print(f"{item_to_equip.name} wurde ausgerüstet.") # GUI handles feedback
             # else:
                 # print("Dieser Gegenstand kann nicht ausgerüstet werden.") # GUI handles feedback
