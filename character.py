@@ -35,6 +35,9 @@ class Character:
         self.xp_to_next_level = 100
         self.gold = 0
         self.attributes = {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}
+        self.inventory = []
+        self.max_inventory_size = 10
+        self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
 
         # Derived stats
         self.max_lp = 0
@@ -42,10 +45,6 @@ class Character:
         self.max_mp = 0
         self.current_mp = 0
         self.update_derived_stats() # Initial calculation
-
-        self.inventory = []
-        self.max_inventory_size = 10
-        self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
 
     def update_derived_stats(self):
         """Calculates derived stats like LP and MP based on base attributes."""
