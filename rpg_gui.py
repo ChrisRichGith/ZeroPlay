@@ -103,7 +103,7 @@ class RpgGui:
         # Quest Progress
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
-        ttk.Label(actions_frame, textvariable=self.quest_label_var).pack()
+        ttk.Label(actions_frame, textvariable=self.quest_label_var, wraplength=250, justify=tk.CENTER).pack()
         ttk.Label(actions_frame, textvariable=self.quest_status_var, foreground="gray").pack()
 
 
