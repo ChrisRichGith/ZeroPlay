@@ -2,20 +2,8 @@
 """
 Defines the Character class, which manages the player's stats, inventory, and equipment.
 """
-from item import Item
-
-class Character:
-    """Manages character attributes, inventory, and equipment."""
-
-    def __init__(self, name, klasse):
-        """
-        Initializes a new character.
-
-        Args:
-            name (str): The character's name.
-            klasse (str): The character's class.
-        """
 import random
+from item import Item
 
 class Character:
     """Manages character attributes, inventory, and equipment."""
@@ -62,9 +50,6 @@ class Character:
     def add_xp(self, amount):
         """
         Adds XP to the character and checks for level ups.
-
-        Args:
-            amount (int): The amount of XP to add.
 
         Returns:
             list: A list of strings describing the attribute increases on level up, or empty list.
@@ -114,10 +99,6 @@ class Character:
         """
         Adds gold and an item to the character's inventory if there is space.
 
-        Args:
-            gold (int): The amount of gold to add.
-            item (Item): The item to add.
-
         Returns:
             bool: True if the item was added, False otherwise.
         """
@@ -127,9 +108,8 @@ class Character:
                 self.inventory.append(item)
                 return True
             else:
-                # Inventory is full, item is not added
                 return False
-        return True # For cases where only gold is added
+        return True
 
     def is_upgrade(self, item_from_inventory):
         """
@@ -143,11 +123,9 @@ class Character:
         """
         equipped_item = self.equipment.get(item_from_inventory.slot)
 
-        # If no item is equipped in that slot, any item is an upgrade.
         if not equipped_item:
             return True
 
-        # Compare the total bonus stats.
         return item_from_inventory.get_total_bonus() > equipped_item.get_total_bonus()
 
     def equip(self, item_index):
@@ -162,19 +140,12 @@ class Character:
             slot = item_to_equip.slot
 
             if slot in self.equipment:
-                # Item ausziehen und ins Inventar legen
                 if self.equipment[slot]:
                     self.inventory.append(self.equipment[slot])
 
-                # Neues Item ausrüsten
                 self.equipment[slot] = item_to_equip
                 self.inventory.pop(item_index)
-                self.update_derived_stats() # Recalculate LP/MP after equipping
-                # print(f"{item_to_equip.name} wurde ausgerüstet.") # GUI handles feedback
-            # else:
-                # print("Dieser Gegenstand kann nicht ausgerüstet werden.") # GUI handles feedback
-        # else:
-            # print("Ungültiger Inventarplatz.") # GUI handles feedback
+                self.update_derived_stats()
 
     def get_total_stats(self):
         """
@@ -192,10 +163,13 @@ class Character:
         return total_stats
 
     def display_status(self):
-        """Prints a detailed status screen for the character."""
+        """DEPRECATED: Prints a detailed status screen for the character."""
+        # This method is no longer used by the GUI but kept for potential CLI debugging.
         total_stats = self.get_total_stats()
         print("\n--- CHARAKTERSTATUS ---")
         print(f"Name: {self.name}, Klasse: {self.klasse}, Level: {self.level}")
+        print(f"LP: {self.current_lp}/{self.max_lp} | MP: {self.current_mp}/{self.max_mp}")
+        print(f"XP: {self.xp}/{self.xp_to_next_level}")
         print(f"Gold: {self.gold}")
         print("\nAttribute:")
         for stat, value in total_stats.items():
