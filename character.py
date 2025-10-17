@@ -5,6 +5,8 @@ Defines the Character class, which manages the player's stats, inventory, and eq
 import random
 from item import Item
 from game_data import CLASSES
+
+class Character:
     """Manages character attributes, inventory, and equipment."""
 
     def __init__(self, name, klasse):
@@ -121,6 +123,9 @@ from game_data import CLASSES
         Returns:
             bool: True if the item is an upgrade, False otherwise.
         """
+        if item_from_inventory.item_type != "Ausrüstung":
+            return False
+
         equipped_item = self.equipment.get(item_from_inventory.slot)
 
         if not equipped_item:
