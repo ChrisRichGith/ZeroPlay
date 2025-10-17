@@ -34,6 +34,7 @@ class RpgGui:
         self.trader = Trader()
         self.current_quest = None
         self.is_auto_questing = False
+        self.game_over = False
 
         self._setup_string_vars()
         self.create_widgets()
@@ -220,6 +221,16 @@ class RpgGui:
 
         self.current_quest.advance(self.player)
 
+        # Check for low health or game over after quest damage
+        if self.player.current_lp <= 0:
+            self.handle_game_over()
+            return
+
+        if self.player.current_lp / self.player.max_lp < 0.1:
+            if self.is_auto_questing:
+                self.toggle_auto_quest() # Pause auto-quest
+                messagebox.showwarning("Niedrige Lebenspunkte!", "Deine Lebenspunkte sind kritisch niedrig! Auto-Quest pausiert. Heile dich!")
+
         if self.current_quest.is_complete():
             gold, xp, item = self.current_quest.generate_reward(self.player)
 
@@ -307,23 +318,39 @@ class RpgGui:
         self.update_display() # Refresh main GUI in case gold/inventory changed
         self.trader_button.config(state=tk.NORMAL)
 
+    def handle_game_over(self):
+        """Manages the game over sequence."""
+        self.game_over = True
+        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
+        self.root.destroy() # Close the window, which allows main.py to loop
+
 
 def start_game_with_character_creation():
-    """Handles character creation and starts the main GUI."""
-    root_window = tk.Tk()
-    root_window.withdraw()
+    """Handles character creation and returns player data."""
+    # Create a dummy root to host the dialogs
+    dummy_root = tk.Tk()
+    dummy_root.withdraw()
 
-    player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=root_window)
-    if player_name is None: root_window.destroy(); return
-    player_class = simpledialog.askstring("Charakter erstellen", "Gib die Klasse deines Helden ein:", parent=root_window)
-    if player_class is None: root_window.destroy(); return
+    player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=dummy_root)
+    if player_name is None:
+        dummy_root.destroy()
+        return None, None
+
+    player_class = simpledialog.askstring("Charakter erstellen", "Gib die Klasse deines Helden ein:", parent=dummy_root)
+    if player_class is None:
+        dummy_root.destroy()
+        return None, None
 
     if not player_name: player_name = "Held"
     if not player_class: player_class = "Anfänger"
 
-    root_window.deiconify()
-    app = RpgGui(root_window, player_name, player_class)
-    root_window.mainloop()
+    dummy_root.destroy()
+    return player_name, player_class
 
 if __name__ == '__main__':
-    start_game_with_character_creation()
+    # This part is for testing the GUI directly
+    p_name, p_class = start_game_with_character_creation()
+    if p_name and p_class:
+        root = tk.Tk()
+        app = RpgGui(root, p_name, p_class)
+        root.mainloop()
