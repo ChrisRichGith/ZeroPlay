@@ -84,6 +84,14 @@ class RpgGui:
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
+        # XP Progress Bar
+        xp_frame = ttk.LabelFrame(char_frame, text="Erfahrung", padding="5")
+        xp_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        self.xp_bar = ttk.Progressbar(xp_frame, orient='horizontal', mode='determinate')
+        self.xp_bar.pack(fill=tk.X, expand=True)
+        self.xp_label_var = tk.StringVar()
+        ttk.Label(xp_frame, textvariable=self.xp_label_var, anchor="center").pack()
+
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
         actions_frame.pack(fill=tk.X)
@@ -149,6 +157,10 @@ class RpgGui:
             else:
                 self.inventory_listbox.itemconfig(i, {'bg': 'white'})
 
+        # Update XP Bar
+        self.xp_label_var.set(f"{self.player.xp} / {self.player.xp_to_next_level} XP")
+        self.xp_bar['value'] = (self.player.xp / self.player.xp_to_next_level) * 100
+
         # Disable/Enable buttons based on state
         is_questing = self.current_quest is not None
         self.quest_button.config(state=tk.DISABLED if is_questing else tk.NORMAL)
@@ -194,21 +206,25 @@ class RpgGui:
         if self.current_quest is None: return
 
         if self.current_quest.is_complete():
-            gold, item = self.current_quest._generate_reward()
-            item_added = self.player.add_loot(gold, item)
-            self.player.level += 1
+            gold, xp, item = self.current_quest._generate_reward()
 
-            loot_message = f"Loot: {gold} Gold"
+            # Add loot and XP
+            item_added = self.player.add_loot(gold, item)
+            level_up_info = self.player.add_xp(xp)
+
+            # Build messages
+            loot_message = f"Loot: {gold} Gold, {xp} XP"
             if item:
                 if item_added:
                     loot_message += f" und '{item.name}'"
                 else:
                     loot_message += f" (aber '{item.name}' passte nicht ins Inventar!)"
+            self.quest_status_var.set(loot_message)
 
-            self.quest_status_var.set(f"Level {self.player.level} erreicht! {loot_message}")
-
-            if not self.is_auto_questing:
-                messagebox.showinfo("Quest abgeschlossen!", f"Du hast Level {self.player.level} erreicht!\n{loot_message}.")
+            # Show level up message if applicable
+            if level_up_info:
+                level_up_summary = f"Level Up! Du bist jetzt Level {self.player.level}!\n\nAttribut-Boni:\n" + "\n".join(level_up_info)
+                messagebox.showinfo("Level Aufstieg!", level_up_summary)
 
             self.current_quest = None
             self.quest_label_var.set("Keine aktive Quest.")

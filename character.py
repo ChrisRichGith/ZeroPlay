@@ -15,14 +15,65 @@ class Character:
             name (str): The character's name.
             klasse (str): The character's class.
         """
+import random
+
+class Character:
+    """Manages character attributes, inventory, and equipment."""
+
+    def __init__(self, name, klasse):
+        """
+        Initializes a new character.
+
+        Args:
+            name (str): The character's name.
+            klasse (str): The character's class.
+        """
         self.name = name
         self.klasse = klasse
         self.level = 1
+        self.xp = 0
+        self.xp_to_next_level = 100
         self.gold = 0
         self.attributes = {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}
         self.inventory = []
         self.max_inventory_size = 10
         self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
+
+    def _calculate_xp_for_next_level(self):
+        """Calculates the XP needed for the next level."""
+        return int(100 * (self.level ** 1.5))
+
+    def add_xp(self, amount):
+        """
+        Adds XP to the character and checks for level ups.
+
+        Args:
+            amount (int): The amount of XP to add.
+
+        Returns:
+            list: A list of strings describing the attribute increases on level up, or empty list.
+        """
+        self.xp += amount
+        level_up_messages = []
+        while self.xp >= self.xp_to_next_level:
+            self.xp -= self.xp_to_next_level
+            level_up_messages.extend(self.level_up())
+        return level_up_messages
+
+    def level_up(self):
+        """Handles the character's level up process."""
+        self.level += 1
+        self.xp_to_next_level = self._calculate_xp_for_next_level()
+
+        stat_increases = []
+        # Increase 1 to 2 random stats
+        stats_to_increase = random.sample(list(self.attributes.keys()), k=random.randint(1, 2))
+        for stat in stats_to_increase:
+            increase = random.randint(1, 2)
+            self.attributes[stat] += increase
+            stat_increases.append(f"{stat} +{increase}")
+
+        return stat_increases
 
     def add_loot(self, gold, item):
         """

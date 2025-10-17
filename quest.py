@@ -65,13 +65,14 @@ class Quest:
 
     def _generate_reward(self):
         """
-        Generates random gold and a random item as a reward.
+        Generates random gold, XP, and a random item as a reward.
 
         Returns:
-            tuple: A tuple containing the amount of gold (int) and an Item object (or None).
+            tuple: A tuple containing gold, xp, and an Item object (or None).
         """
-        # Belohnung skaliert leicht mit der Quest-Dauer
+        # Belohnungen skalieren leicht mit der Quest-Dauer
         gold_reward = random.randint(10, 50) + self.duration
+        xp_reward = random.randint(20, 40) + self.duration * 2
 
         # 70% Chance auf ein Item als Belohnung
         if random.random() < 0.7:
@@ -79,4 +80,4 @@ class Quest:
         else:
             item_reward = None
 
-        return gold_reward, item_reward
+        return gold_reward, xp_reward, item_reward
