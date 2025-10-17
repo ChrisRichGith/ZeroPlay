@@ -325,24 +325,22 @@ class RpgGui:
         self.root.destroy() # Close the window, which allows main.py to loop
 
 
+from class_selection_gui import choose_class
+
 def start_game_with_character_creation():
     """Handles character creation and returns player data."""
-    # Create a dummy root to host the dialogs
     dummy_root = tk.Tk()
     dummy_root.withdraw()
 
     player_name = simpledialog.askstring("Charakter erstellen", "Gib den Namen deines Helden ein:", parent=dummy_root)
-    if player_name is None:
+    if not player_name: # Handle cancel or empty name
         dummy_root.destroy()
         return None, None
 
-    player_class = simpledialog.askstring("Charakter erstellen", "Gib die Klasse deines Helden ein:", parent=dummy_root)
-    if player_class is None:
+    player_class = choose_class(dummy_root)
+    if not player_class: # Handle cancel
         dummy_root.destroy()
         return None, None
-
-    if not player_name: player_name = "Held"
-    if not player_class: player_class = "Anfänger"
 
     dummy_root.destroy()
     return player_name, player_class

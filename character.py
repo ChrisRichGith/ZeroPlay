@@ -4,8 +4,7 @@ Defines the Character class, which manages the player's stats, inventory, and eq
 """
 import random
 from item import Item
-
-class Character:
+from game_data import CLASSES
     """Manages character attributes, inventory, and equipment."""
 
     def __init__(self, name, klasse):
@@ -22,7 +21,8 @@ class Character:
         self.xp = 0
         self.xp_to_next_level = 100
         self.gold = 0
-        self.attributes = {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}
+        # Load base attributes from the selected class
+        self.attributes = CLASSES.get(klasse, {}).get("attributes", {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}).copy()
         self.inventory = []
         self.max_inventory_size = 10
         self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}
