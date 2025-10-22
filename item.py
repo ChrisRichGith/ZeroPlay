@@ -8,7 +8,7 @@ from utils import format_currency
 class Item:
     """Represents an item in the game with a name, type, value, and potential effects."""
 
-    def __init__(self, name, item_type="Ausrüstung", slot=None, stats_boost=None, value=0):
+    def __init__(self, name, item_type="Ausrüstung", slot=None, stats_boost=None, value=0, rarity="Gewöhnlich", color="#ffffff"):
         """
         Initializes an Item.
 
@@ -18,12 +18,16 @@ class Item:
             slot (str, optional): The equipment slot for 'Ausrüstung' type.
             stats_boost (dict, optional): Stat boosts or consumable effects (e.g., {'LP': 50}).
             value (int): The copper value of the item.
+            rarity (str): The rarity of the item.
+            color (str): The hex color code for the item's rarity.
         """
         self.name = name
         self.item_type = item_type
         self.slot = slot
         self.stats_boost = stats_boost if stats_boost else {}
         self.value = value
+        self.rarity = rarity
+        self.color = color
 
     def __str__(self):
         """Returns a string representation of the item."""

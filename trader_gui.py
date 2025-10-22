@@ -116,8 +116,10 @@ class TraderWindow:
         for item in self.player.inventory:
             self.sell_listbox.insert(tk.END, str(item))
 
+        # Update buy listbox with level-appropriate potions
         self.buy_listbox.delete(0, tk.END)
-        for item in self.trader.potions_for_sale:
+        self.potions_for_sale = self.trader.get_potions_for_sale(self.player.level)
+        for item in self.potions_for_sale:
             self.buy_listbox.insert(tk.END, str(item))
 
         # Disable button if player can't afford it
@@ -172,7 +174,7 @@ class TraderWindow:
             return
 
         item_index = selected_indices[0]
-        item_to_buy = self.trader.potions_for_sale[item_index]
+        item_to_buy = self.potions_for_sale[item_index]
 
         success, message = self.trader.buy_item(self.player, item_to_buy)
 

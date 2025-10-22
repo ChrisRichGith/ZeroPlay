@@ -4,58 +4,83 @@ Handles the dynamic generation of loot based on player level.
 """
 import random
 from item import Item
-from game_data import ITEM_BLUEPRINTS, ITEM_PREFIXES
+from game_data import ITEM_BLUEPRINTS, RARITIES
 
-def generate_item_for_level(level):
+def generate_item_for_level(level, luck):
     """
-    Generates a new item with stats and value scaled to the given level.
+    Generates a new item with stats, rarity, and value scaled to the given level.
 
     Args:
         level (int): The player's current level.
+        luck (int): The player's luck attribute, influences rarity.
 
     Returns:
         Item: A newly generated Item object.
     """
-    # 1. Randomly select a slot and a blueprint for that slot
+    # 1. Choose a rarity based on level and luck
+    available_rarities = {r: data for r, data in RARITIES.items() if level >= data["min_level"]}
+
+    rarity_names = list(available_rarities.keys())
+    rarity_weights = [data["weight"] for data in available_rarities.values()]
+
+    # Luck increases the chance of finding better items
+    luck_factor = 1 + (luck / 100) # 50 luck = 1.5x weight for better items
+    for i, r_name in enumerate(rarity_names):
+        if r_name not in ["Schlecht", "Gewöhnlich"]:
+             rarity_weights[i] *= luck_factor
+
+    chosen_rarity_name = random.choices(rarity_names, weights=rarity_weights, k=1)[0]
+    rarity_data = RARITIES[chosen_rarity_name]
+
+    # 2. Select a slot and a blueprint
     slot = random.choice(list(ITEM_BLUEPRINTS.keys()))
     blueprint = random.choice(ITEM_BLUEPRINTS[slot])
 
-    # 2. Calculate the item's power level and corresponding prefix
-    # Higher player level increases the chance for better prefixes
-    power_roll = random.randint(-2, 4) + int(level / 5)
-    power_level = max(min(power_roll, 4), -2) # Clamp between -2 and 4
+    # 3. Assemble the item name
+    item_name = f"{chosen_rarity_name} {blueprint['name'][0]}"
 
-    # 3. Assemble the item name with correct grammar
-    base_name, article = blueprint["name"]
-    adjective = ITEM_PREFIXES.get(power_level, "Gewöhnlich")
+    # 4. Calculate stat bonuses
+    stats_boost = {}
 
-    # German adjective endings
-    if article == 'm':
-        ending = "er"
-    elif article == 'f':
-        ending = "e"
-    elif article == 'n':
-        ending = "es"
-    else:
-        ending = "e" # Default
-
-    prefix = adjective + ending
-    item_name = f"{prefix} {base_name}"
-
-    # 4. Calculate stat bonus
+    # Primary stat bonus calculation
     base_bonus = blueprint["base_bonus"]
-    # Formula: Bonus scales with level and is modified by power level
-    stat_bonus = int(base_bonus + (level * 0.8) + (power_level * 2))
+    # Formula: Bonus scales with level and is modified by rarity
+    primary_stat_value = int((base_bonus + (level * 0.9)) * rarity_data["modifier"])
 
-    # 4. Calculate item value
-    # Formula: Value in copper. Scales with level and is modified by power level.
-    value = int((level * 2) + (stat_bonus * 1.5) * (1 + power_level * 0.4))
-    value = max(1, value) # Ensure value is at least 1
+    # Add some variance (+/- 5%) to create "+" versions implicitly
+    primary_stat_value = int(primary_stat_value * random.uniform(0.95, 1.05))
+    stats_boost[blueprint["base_stat"]] = max(1, primary_stat_value)
 
-    # 5. Assemble the item
-    stats_boost = {blueprint["base_stat"]: stat_bonus}
+    # Add secondary stats for higher rarities
+    all_stats = ["Stärke", "Intelligenz", "Glück"]
+    if chosen_rarity_name in ["Episch", "Legendär", "Mythisch"]:
+        possible_secondary_stats = [s for s in all_stats if s != blueprint["base_stat"]]
+        if possible_secondary_stats:
+            secondary_stat = random.choice(possible_secondary_stats)
+            secondary_value = int(primary_stat_value * 0.4) # Secondary stat is 40% of primary
+            stats_boost[secondary_stat] = max(1, secondary_value)
 
-    return Item(name=item_name, slot=slot, stats_boost=stats_boost, value=value)
+    if chosen_rarity_name == "Mythisch":
+        # A third stat for mythisch items
+        possible_tertiary_stats = [s for s in all_stats if s not in stats_boost]
+        if possible_tertiary_stats:
+            tertiary_stat = random.choice(possible_tertiary_stats)
+            tertiary_value = int(primary_stat_value * 0.25) # Tertiary stat is 25% of primary
+            stats_boost[tertiary_stat] = max(1, tertiary_value)
+
+    # 5. Calculate item value
+    total_stat_points = sum(stats_boost.values())
+    value = int((level * 1.5) + (total_stat_points * 2.0) * rarity_data["modifier"])
+    value = max(1, value)
+
+    return Item(
+        name=item_name,
+        slot=slot,
+        stats_boost=stats_boost,
+        value=value,
+        rarity=chosen_rarity_name,
+        color=rarity_data["color"]
+    )
 
 
 # Example usage for testing:

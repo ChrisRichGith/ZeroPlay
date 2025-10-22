@@ -162,6 +162,26 @@ class RpgGui(ttk.Frame):
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
 
+        self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
+
+    def get_tooltip_text(self):
+        """Callback function to get the text for the tooltip."""
+        try:
+            # Get the item under the mouse cursor
+            _, y, _, _ = self.inventory_listbox.bbox(self.inventory_listbox.curselection()[0])
+            index = self.inventory_listbox.nearest(y)
+            item = self.player.inventory[index]
+
+            # Format the text
+            text = f"{item.name}\n"
+            text += f"Typ: {item.item_type} ({item.slot})\n"
+            text += f"Wert: {format_currency(item.value)}\n\n"
+            for stat, value in item.stats_boost.items():
+                text += f"{stat}: +{value}\n"
+            return text.strip()
+        except (IndexError, tk.TclError):
+            return ""
+
     def update_display(self):
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
@@ -179,10 +199,9 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.delete(0, tk.END)
         for i, item in enumerate(self.player.inventory):
             self.inventory_listbox.insert(tk.END, str(item))
+            self.inventory_listbox.itemconfig(i, {'fg': item.color})
             if self.player.is_upgrade(item):
-                self.inventory_listbox.itemconfig(i, {'bg': '#90EE90'})
-            else:
-                self.inventory_listbox.itemconfig(i, {'bg': 'white'})
+                self.inventory_listbox.itemconfig(i, {'selectbackground': '#00C853'}) # A bright green for selection
         self.lp_label_var.set(f"{self.player.current_lp} / {self.player.max_lp} LP")
         self.lp_bar['value'] = (self.player.current_lp / self.player.max_lp) * 100 if self.player.max_lp > 0 else 0
         self.mp_label_var.set(f"{self.player.current_mp} / {self.player.max_mp} MP")
@@ -249,7 +268,7 @@ class RpgGui(ttk.Frame):
             gold, xp, item = self.current_quest.generate_reward(self.player)
             item_added = self.player.add_loot(gold, item)
             level_up_info = self.player.add_xp(xp)
-            loot_message = f"Loot: {gold} Gold, {xp} XP"
+            loot_message = f"Loot: {format_currency(gold)}, {xp} XP"
             if item:
                 loot_message += f" und '{item.name}'" if item_added else f" (aber '{item.name}' passte nicht ins Inventar!)"
             self.set_loot_text(loot_message)
@@ -317,3 +336,64 @@ class RpgGui(ttk.Frame):
         messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
         if self.callbacks['game_over']:
             self.callbacks['game_over']()
+
+class Tooltip:
+    """
+    Create a tooltip for a given widget.
+    """
+    def __init__(self, widget, text_callback):
+        self.widget = widget
+        self.text_callback = text_callback
+        self.tip_window = None
+        self.id = None
+        self.x = self.y = 0
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.widget.bind("<Motion>", self.motion)
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def motion(self, event=None):
+        self.x, self.y = event.x_root, event.y_root
+        if self.tip_window:
+            self.hidetip()
+            self.showtip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(500, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self):
+        text = self.text_callback()
+        if not text:
+            return
+
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+
+        self.tip_window = tk.Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(self.tip_window, text=text, justify=tk.LEFT,
+                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                         font=("tahoma", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tip_window
+        self.tip_window = None
+        if tw:
+            tw.destroy()

@@ -40,13 +40,25 @@ ITEM_BLUEPRINTS = {
     ]
 }
 
-# Adjektiv-Endungen für (m, f, n) Artikel
-ITEM_PREFIXES = {
-    -2: "Kaputt",
-    -1: "Minderwertig",
-    0: "Gewöhnlich",
-    1: "Verbessert",
-    2: "Selten",
-    3: "Episch",
-    4: "Legendär"
+RARITIES = {
+    "Schlecht":     {"color": "#9d9d9d", "modifier": 0.7, "min_level": 1, "weight": 10},
+    "Gewöhnlich":   {"color": "#ffffff", "modifier": 1.0, "min_level": 1, "weight": 70},
+    "Ungewöhnlich": {"color": "#1eff00", "modifier": 1.2, "min_level": 5, "weight": 15},
+    "Selten":       {"color": "#0070dd", "modifier": 1.5, "min_level": 15, "weight": 4},
+    "Episch":       {"color": "#a335ee", "modifier": 1.8, "min_level": 30, "weight": 1},
+    "Legendär":     {"color": "#ff8000", "modifier": 2.2, "min_level": 50, "weight": 0.1},
+    "Mythisch":     {"color": "#e5cc80", "modifier": 2.7, "min_level": 75, "weight": 0.01}
+}
+
+POTIONS = {
+    1: {"name": "Kleiner Heiltrank", "type": "LP", "value": 50, "cost": 25},
+    10: {"name": "Heiltrank", "type": "LP", "value": 150, "cost": 100},
+    25: {"name": "Großer Heiltrank", "type": "LP", "value": 500, "cost": 500},
+    50: {"name": "Überragender Heiltrank", "type": "LP", "value": 2000, "cost": 2500},
+
+    # Mana Potions start with a negative key to distinguish them easily if needed
+    -1: {"name": "Kleiner Manatrank", "type": "MP", "value": 30, "cost": 35},
+    -10: {"name": "Manatrank", "type": "MP", "value": 100, "cost": 120},
+    -25: {"name": "Großer Manatrank", "type": "MP", "value": 400, "cost": 600},
+    -50: {"name": "Überragender Manatrank", "type": "MP", "value": 1500, "cost": 3000},
 }
