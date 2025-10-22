@@ -249,7 +249,7 @@ class RpgGui(ttk.Frame):
             gold, xp, item = self.current_quest.generate_reward(self.player)
             item_added = self.player.add_loot(gold, item)
             level_up_info = self.player.add_xp(xp)
-            loot_message = f"Loot: {gold} Gold, {xp} XP"
+            loot_message = f"Loot: {format_currency(gold)}, {xp} XP"
             if item:
                 loot_message += f" und '{item.name}'" if item_added else f" (aber '{item.name}' passte nicht ins Inventar!)"
             self.set_loot_text(loot_message)
