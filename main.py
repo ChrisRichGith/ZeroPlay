@@ -3,6 +3,7 @@
 Main entry point for the RPG. Launches the main Game controller.
 """
 import tkinter as tk
+from tkinter import ttk
 from character import Character
 from start_menu_gui import StartMenu
 from class_selection_frame import ClassSelectionFrame
@@ -16,6 +17,10 @@ class Game:
         self.root = root
         self.root.title("Chronicle of the Idle Hero")
         self.root.geometry("800x750")
+
+        # Apply a modern theme
+        style = ttk.Style(self.root)
+        style.theme_use('clam')
 
         self.current_frame = None
         self.character = None

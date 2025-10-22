@@ -69,12 +69,23 @@ class RpgGui(ttk.Frame):
         right_pane = ttk.Frame(self)
         right_pane.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
         right_pane.columnconfigure(0, weight=1)
-        right_pane.rowconfigure(1, weight=1)
+        right_pane.rowconfigure(0, weight=1)
 
         self._create_character_frame(left_pane)
         self._create_actions_frame(left_pane)
-        self._create_equipment_frame(right_pane)
-        self._create_inventory_frame(right_pane)
+
+        # Create a notebook for equipment and inventory
+        notebook = ttk.Notebook(right_pane)
+        notebook.grid(row=0, column=0, sticky="nsew")
+
+        equipment_tab = ttk.Frame(notebook)
+        inventory_tab = ttk.Frame(notebook)
+        notebook.add(equipment_tab, text='Ausrüstung')
+        notebook.add(inventory_tab, text='Inventar')
+
+        self._create_equipment_frame(equipment_tab)
+        self._create_inventory_frame(inventory_tab)
+
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
@@ -115,24 +126,33 @@ class RpgGui(ttk.Frame):
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
 
-        self.quest_desc_text = tk.Text(actions_frame, height=3, wrap=tk.WORD, bg="lightgrey", relief="flat")
-        self.quest_desc_text.pack(fill=tk.X, pady=5)
-        self.quest_desc_text.config(state=tk.DISABLED)
+        # Quest Log
+        log_frame = ttk.Frame(actions_frame)
+        log_frame.pack(fill=tk.X, pady=5)
+        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="lightgrey", relief="flat")
+        self.quest_log.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
+        self.quest_log.config(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.quest_log.config(state=tk.DISABLED)
 
         self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
         self.loot_status_text.pack(fill=tk.X, pady=5)
         self.loot_status_text.config(state=tk.DISABLED)
 
     def _create_equipment_frame(self, parent):
-        equip_frame = ttk.LabelFrame(parent, text="Ausrüstung", padding="10")
-        equip_frame.grid(row=0, column=0, sticky="new")
+        parent.columnconfigure(0, weight=1)
+        equip_frame = ttk.LabelFrame(parent, text="Angelegte Ausrüstung", padding="10")
+        equip_frame.grid(row=0, column=0, sticky="new", padx=10, pady=10)
         for i, (slot, var) in enumerate(self.equipment_vars.items()):
             ttk.Label(equip_frame, text=f"{slot}:").grid(row=i, column=0, sticky="w")
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
     def _create_inventory_frame(self, parent):
-        self.inv_frame = ttk.LabelFrame(parent, text="Inventar", padding="10")
-        self.inv_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        parent.rowconfigure(0, weight=1)
+        parent.columnconfigure(0, weight=1)
+        self.inv_frame = ttk.LabelFrame(parent, text="Rucksack", padding="10")
+        self.inv_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         self.inv_frame.rowconfigure(0, weight=1)
         self.inv_frame.columnconfigure(0, weight=1)
         self.inventory_listbox = tk.Listbox(self.inv_frame)
@@ -172,21 +192,27 @@ class RpgGui(ttk.Frame):
         self.update_button_states()
         self.update_idletasks()
 
-    def set_text(self, text_widget, text):
-        text_widget.config(state=tk.NORMAL)
-        text_widget.delete("1.0", tk.END)
-        text_widget.insert("1.0", text)
-        text_widget.config(state=tk.DISABLED)
+    def add_to_log(self, message):
+        self.quest_log.config(state=tk.NORMAL)
+        self.quest_log.insert(tk.END, message + "\n")
+        self.quest_log.see(tk.END)
+        self.quest_log.config(state=tk.DISABLED)
+
+    def set_loot_text(self, text):
+        self.loot_status_text.config(state=tk.NORMAL)
+        self.loot_status_text.delete("1.0", tk.END)
+        self.loot_status_text.insert("1.0", text)
+        self.loot_status_text.config(state=tk.DISABLED)
 
     def toggle_auto_quest(self):
         self.is_auto_questing = not self.is_auto_questing
         if self.is_auto_questing:
             self.auto_quest_button.config(text="Auto-Quest stoppen")
-            self.set_text(self.loot_status_text, "Auto-Quest Modus aktiv...")
+            self.set_loot_text("Auto-Quest Modus aktiv...")
             self.start_quest()
         else:
             self.auto_quest_button.config(text="Auto-Quest starten")
-            self.set_text(self.loot_status_text, "Auto-Quest Modus gestoppt.")
+            self.set_loot_text("Auto-Quest Modus gestoppt.")
 
     def start_quest(self):
         if self.current_quest:
@@ -194,21 +220,24 @@ class RpgGui(ttk.Frame):
                 messagebox.showwarning("Quest aktiv", "Bitte schließe erst die aktuelle Quest ab.")
             return
         if len(self.player.inventory) >= self.player.max_inventory_size:
-            self.set_text(self.loot_status_text, "Inventar voll! Auto-Quest gestoppt.")
+            self.set_loot_text("Inventar voll! Auto-Quest gestoppt.")
             messagebox.showinfo("Inventar voll", "Dein Inventar ist voll. Besuche den Händler!")
             if self.is_auto_questing:
                 self.toggle_auto_quest()
             return
         quest_desc = random.choice(AVAILABLE_QUESTS)
         self.current_quest = Quest(quest_desc)
-        self.set_text(self.quest_desc_text, quest_desc)
+        self.add_to_log(f"Neue Quest: {quest_desc}")
         self.progress_bar['value'] = 0
         self.update_display()
         self.advance_quest()
 
     def advance_quest(self):
         if self.current_quest is None: return
-        self.current_quest.advance(self.player)
+        event_message = self.current_quest.advance(self.player)
+        if event_message:
+            self.add_to_log(event_message)
+
         if self.player.current_lp <= 0:
             self.handle_game_over()
             return
@@ -223,12 +252,11 @@ class RpgGui(ttk.Frame):
             loot_message = f"Loot: {gold} Gold, {xp} XP"
             if item:
                 loot_message += f" und '{item.name}'" if item_added else f" (aber '{item.name}' passte nicht ins Inventar!)"
-            self.set_text(self.loot_status_text, loot_message)
+            self.set_loot_text(loot_message)
             if level_up_info:
                 level_up_summary = f"Level Up! Du bist jetzt Level {self.player.level}!\n\nAttribut-Boni:\n" + "\n".join(level_up_info)
                 messagebox.showinfo("Level Aufstieg!", level_up_summary)
             self.current_quest = None
-            self.set_text(self.quest_desc_text, "Keine aktive Quest.")
             self.progress_bar['value'] = 0
             if self.is_auto_questing:
                 self.master.after(1000, self.start_quest)

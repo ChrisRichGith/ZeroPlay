@@ -7,6 +7,17 @@ import time
 from item import Item
 from loot_system import generate_item_for_level
 
+QUEST_EVENTS = [
+    "Du kämpfst gegen einen Schleim.",
+    "Du findest eine versteckte Truhe!",
+    "Du umgehst eine Falle.",
+    "Ein Goblin greift an!",
+    "Du ruhst dich kurz aus.",
+    "Du findest eine Abkürzung.",
+    "Du verirrst dich, findest aber den Weg zurück.",
+    "Ein Händler bietet dir einen seltsamen Trank an.",
+]
+
 class Quest:
     """Represents a quest that automatically progresses and grants rewards."""
 
@@ -28,15 +39,20 @@ class Quest:
 
     def advance(self, character):
         """
-        Advances the quest progress. This is now just a progress ticker.
-        The reward logic is handled by the GUI.
+        Advances the quest progress and returns an event message.
         """
         if not self.is_complete():
             self.progress += 1
+            event_message = random.choice(QUEST_EVENTS)
 
             # On completion, inflict a small amount of damage
             if self.is_complete():
-                character.current_lp = max(0, character.current_lp - random.randint(5, 15))
+                damage = random.randint(5, 15)
+                character.current_lp = max(0, character.current_lp - damage)
+                event_message = f"Quest abgeschlossen! Du hast {damage} Schaden erlitten."
+
+            return event_message
+        return None
 
 
     def generate_reward(self, character):
