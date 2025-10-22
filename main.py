@@ -17,7 +17,7 @@ class Game:
     def __init__(self, root):
         self.root = root
         self.root.title("Chronicle of the Idle Hero")
-        self.root.geometry("800x750")
+        self.root.geometry("1280x800")
         center_window(self.root)
 
         # Apply a modern theme
