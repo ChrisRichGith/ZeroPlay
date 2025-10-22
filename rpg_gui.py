@@ -354,6 +354,9 @@ class Tooltip:
         self.widget.bind("<Motion>", self.motion)
 
     def enter(self, event=None):
+        # Store the mouse position
+        self.x = event.x_root
+        self.y = event.y_root
         self.schedule()
 
     def leave(self, event=None):
@@ -361,10 +364,12 @@ class Tooltip:
         self.hidetip()
 
     def motion(self, event=None):
-        self.x, self.y = event.x_root, event.y_root
+        # Update the mouse position
+        self.x = event.x_root
+        self.y = event.y_root
+        # If the tooltip is already visible, move it
         if self.tip_window:
-            self.hidetip()
-            self.showtip()
+            self.tip_window.wm_geometry(f"+{self.x + 25}+{self.y + 20}")
 
     def schedule(self):
         self.unschedule()
@@ -381,18 +386,20 @@ class Tooltip:
         if not text:
             return
 
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 20
+        # Use the stored mouse coordinates
+        x = self.x + 25
+        y = self.y + 20
 
-        self.tip_window = tk.Toplevel(self.widget)
-        self.tip_window.wm_overrideredirect(True)
+        # Create the tooltip window if it doesn't exist
+        if self.tip_window is None:
+            self.tip_window = tk.Toplevel(self.widget)
+            self.tip_window.wm_overrideredirect(True)
+            label = tk.Label(self.tip_window, text=text, justify=tk.LEFT,
+                             background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                             font=("tahoma", "8", "normal"))
+            label.pack(ipadx=1)
+
         self.tip_window.wm_geometry(f"+{x}+{y}")
-
-        label = tk.Label(self.tip_window, text=text, justify=tk.LEFT,
-                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-                         font=("tahoma", "8", "normal"))
-        label.pack(ipadx=1)
 
     def hidetip(self):
         tw = self.tip_window
