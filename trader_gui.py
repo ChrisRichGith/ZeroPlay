@@ -58,7 +58,7 @@ class TraderWindow:
         top_frame = ttk.Frame(main_frame)
         top_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
-        ttk.Label(top_frame, text="Dein Gold:").pack(side=tk.LEFT)
+        ttk.Label(top_frame, text="Deine Münzen:").pack(side=tk.LEFT)
         ttk.Label(top_frame, textvariable=self.player_copper_var).pack(side=tk.LEFT, padx=5)
 
         self.upgrade_button = ttk.Button(top_frame, text="Inventar erweitern", command=self.buy_upgrade)
@@ -159,10 +159,10 @@ class TraderWindow:
         cost = self.trader.get_upgrade_cost()
         upgraded = self.trader.buy_inventory_upgrade(self.player)
         if upgraded:
-            messagebox.showinfo("Upgrade erfolgreich!", f"Inventar für {cost} Gold erweitert!", parent=self.window)
+            messagebox.showinfo("Upgrade erfolgreich!", f"Inventar für {format_currency(cost)} erweitert!", parent=self.window)
             self.update_display()
         else:
-            messagebox.showerror("Nicht genug Gold", "Du kannst dir dieses Upgrade nicht leisten.", parent=self.window)
+            messagebox.showerror("Nicht genug Münzen", "Du kannst dir dieses Upgrade nicht leisten.", parent=self.window)
 
     def buy_item(self):
         """Buys the selected item from the trader."""
