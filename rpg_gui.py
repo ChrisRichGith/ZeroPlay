@@ -198,10 +198,12 @@ class RpgGui(ttk.Frame):
         self.inv_frame.config(text=f"Inventar ({len(self.player.inventory)}/{self.player.max_inventory_size})")
         self.inventory_listbox.delete(0, tk.END)
         for i, item in enumerate(self.player.inventory):
-            self.inventory_listbox.insert(tk.END, str(item))
-            self.inventory_listbox.itemconfig(i, {'fg': item.color})
+            item_text = str(item)
             if self.player.is_upgrade(item):
-                self.inventory_listbox.itemconfig(i, {'selectbackground': '#00C853'}) # A bright green for selection
+                item_text = "⭐ " + item_text
+            self.inventory_listbox.insert(tk.END, item_text)
+            self.inventory_listbox.itemconfig(i, {'fg': item.color})
+
         self.lp_label_var.set(f"{self.player.current_lp} / {self.player.max_lp} LP")
         self.lp_bar['value'] = (self.player.current_lp / self.player.max_lp) * 100 if self.player.max_lp > 0 else 0
         self.mp_label_var.set(f"{self.player.current_mp} / {self.player.max_mp} MP")
