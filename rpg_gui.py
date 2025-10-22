@@ -11,7 +11,7 @@ from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
-from utils import format_currency
+from utils import format_currency, center_window
 
 # Liste verfügbarer Quests
 AVAILABLE_QUESTS = [
@@ -274,7 +274,7 @@ class RpgGui(ttk.Frame):
             self.set_loot_text(loot_message)
             if level_up_info:
                 level_up_summary = f"Level Up! Du bist jetzt Level {self.player.level}!\n\nAttribut-Boni:\n" + "\n".join(level_up_info)
-                messagebox.showinfo("Level Aufstieg!", level_up_summary)
+                CountdownDialog(self, title="Level Aufstieg!", message=level_up_summary)
             self.current_quest = None
             self.progress_bar['value'] = 0
             if self.is_auto_questing:
@@ -397,3 +397,48 @@ class Tooltip:
         self.tip_window = None
         if tw:
             tw.destroy()
+
+class CountdownDialog(tk.Toplevel):
+    """A modal dialog with a countdown timer that closes automatically."""
+    def __init__(self, parent, title, message, countdown=5):
+        super().__init__(parent)
+        self.title(title)
+        self.message = message
+        self.countdown = countdown
+        self.parent = parent
+
+        # Make window modal
+        self.transient(parent)
+        self.grab_set()
+
+        # UI Elements
+        ttk.Label(self, text=self.message, wraplength=300, justify=tk.LEFT).pack(padx=20, pady=10)
+
+        self.countdown_label = ttk.Label(self, text=f"Schließt in {self.countdown} Sekunden...")
+        self.countdown_label.pack(pady=5)
+
+        ok_button = ttk.Button(self, text="OK", command=self.destroy)
+        ok_button.pack(pady=10, padx=20, fill=tk.X)
+
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
+
+        # Center the window
+        self.update_idletasks()
+        center_window(self)
+
+        # Start the countdown
+        self.update_countdown()
+
+    def update_countdown(self):
+        if self.countdown > 0:
+            self.countdown_label.config(text=f"Schließt in {self.countdown} Sekunden...")
+            self.countdown -= 1
+            self._after_id = self.after(1000, self.update_countdown)
+        else:
+            self.destroy()
+
+    def destroy(self):
+        # Cancel the pending `after` call before destroying the window
+        if hasattr(self, '_after_id'):
+            self.after_cancel(self._after_id)
+        super().destroy()
