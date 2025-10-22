@@ -4,7 +4,7 @@ Defines the GUI for the Trader window.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
-from utils import format_currency
+from utils import format_currency, center_window
 
 class TraderWindow:
     """Manages the trader GUI window."""
@@ -29,6 +29,7 @@ class TraderWindow:
         self.window.title("Händler")
         self.window.geometry("600x500")
         self.window.minsize(500, 400)
+        center_window(self.window)
 
         # Ensure closing the window calls our custom function
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)

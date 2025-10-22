@@ -9,6 +9,7 @@ from start_menu_gui import StartMenu
 from class_selection_frame import ClassSelectionFrame
 from rpg_gui import RpgGui
 from save_load_system import save_game, load_game, get_save_files, SAVE_DIR
+from utils import center_window
 import os
 
 class Game:
@@ -17,6 +18,7 @@ class Game:
         self.root = root
         self.root.title("Chronicle of the Idle Hero")
         self.root.geometry("800x750")
+        center_window(self.root)
 
         # Apply a modern theme
         style = ttk.Style(self.root)
