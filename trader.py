@@ -99,7 +99,7 @@ class Trader:
             return False, "Inventar ist voll."
 
         if character.copper < item_to_buy.value:
-            return False, "Nicht genug Gold."
+            return False, "Nicht genug Münzen."
 
         character.copper -= item_to_buy.value
         character.inventory.append(item_to_buy)

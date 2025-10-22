@@ -192,7 +192,7 @@ class Character:
         print(f"Name: {self.name}, Klasse: {self.klasse}, Level: {self.level}")
         print(f"LP: {self.current_lp}/{self.max_lp} | MP: {self.current_mp}/{self.max_mp}")
         print(f"XP: {self.xp}/{self.xp_to_next_level}")
-        print(f"Gold: {self.gold}")
+        print(f"Gold: {self.copper}")
         print("\nAttribute:")
         for stat, value in total_stats.items():
             base_value = self.attributes.get(stat, 0)
