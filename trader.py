@@ -3,6 +3,7 @@
 Defines the Trader class for handling item selling and inventory upgrades.
 """
 from item import Item
+from game_data import POTIONS
 
 class Trader:
     """Manages all trading-related logic."""
@@ -11,10 +12,20 @@ class Trader:
         """Initializes the trader."""
         self.inventory_upgrade_cost = 1000 # Start cost: 10 silver
         self.upgrade_cost_increase_factor = 1.8
-        self.potions_for_sale = [
-            Item("Kleiner Heiltrank", item_type="Verbrauchsgut", stats_boost={"LP": 50}, value=25), # 25 copper
-            Item("Kleiner Manatrank", item_type="Verbrauchsgut", stats_boost={"MP": 30}, value=35), # 35 copper
-        ]
+
+    def get_potions_for_sale(self, character_level):
+        """Returns a list of potions available at the character's level."""
+        available_potions = []
+        for level_req, data in POTIONS.items():
+            if character_level >= abs(level_req):
+                potion = Item(
+                    name=data["name"],
+                    item_type="Verbrauchsgut",
+                    stats_boost={data["type"]: data["value"]},
+                    value=data["cost"]
+                )
+                available_potions.append(potion)
+        return available_potions
 
     def sell_item(self, character, item_index):
         """

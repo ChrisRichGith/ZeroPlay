@@ -73,7 +73,7 @@ class Quest:
         # Luck also slightly increases the chance of finding an item
         item_chance = 0.7 + (character.get_total_stats()['Glück'] / 200) # 10 luck = +5% chance
         if random.random() < min(0.95, item_chance): # Cap at 95%
-            item_reward = generate_item_for_level(character.level)
+            item_reward = generate_item_for_level(character.level, character.get_total_stats()['Glück'])
         else:
             item_reward = None
 
