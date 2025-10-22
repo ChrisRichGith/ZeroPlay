@@ -67,6 +67,7 @@ class Game:
             self.show_start_menu()
 
     def show_game(self):
+        self.root.title(f"Chronicle of the Idle Hero - {self.character.name}")
         callbacks = {
             'game_over': self.handle_game_over_and_restart,
         }
