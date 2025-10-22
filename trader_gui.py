@@ -43,7 +43,7 @@ class TraderWindow:
 
     def _setup_vars(self):
         """Sets up tkinter StringVars for the trader window."""
-        self.player_gold_var = tk.StringVar()
+        self.player_copper_var = tk.StringVar()
         self.upgrade_cost_var = tk.StringVar()
 
     def create_widgets(self):
@@ -58,7 +58,7 @@ class TraderWindow:
         top_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         ttk.Label(top_frame, text="Dein Gold:").pack(side=tk.LEFT)
-        ttk.Label(top_frame, textvariable=self.player_gold_var).pack(side=tk.LEFT, padx=5)
+        ttk.Label(top_frame, textvariable=self.player_copper_var).pack(side=tk.LEFT, padx=5)
 
         self.upgrade_button = ttk.Button(top_frame, text="Inventar erweitern", command=self.buy_upgrade)
         self.upgrade_button.pack(side=tk.RIGHT)
@@ -108,7 +108,7 @@ class TraderWindow:
 
     def update_display(self):
         """Updates all display elements in the trader window."""
-        self.player_gold_var.set(format_currency(self.player.copper))
+        self.player_copper_var.set(format_currency(self.player.copper))
         self.upgrade_cost_var.set(f"Kosten: {format_currency(self.trader.get_upgrade_cost())}")
 
         self.sell_listbox.delete(0, tk.END)
@@ -120,7 +120,7 @@ class TraderWindow:
             self.buy_listbox.insert(tk.END, str(item))
 
         # Disable button if player can't afford it
-        can_afford_upgrade = self.player.gold >= self.trader.get_upgrade_cost()
+        can_afford_upgrade = self.player.copper >= self.trader.get_upgrade_cost()
         self.upgrade_button.config(state=tk.NORMAL if can_afford_upgrade else tk.DISABLED)
 
     def sell_item(self):

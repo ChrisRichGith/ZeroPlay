@@ -111,7 +111,7 @@ class StartMenu(ttk.Frame):
         if char:
             self.preview_name_var.set(f"Name: {char.name} ({char.klasse})")
             self.preview_level_var.set(f"Level: {char.level}")
-            self.preview_gold_var.set(f"Gold: {char.gold}")
+            self.preview_gold_var.set(f"Gold: {char.copper}")
             for stat, var in self.preview_stats_vars.items():
                 var.set(f"{stat}: {char.attributes.get(stat, 0)}")
         else:
