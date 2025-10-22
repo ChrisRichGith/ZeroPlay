@@ -4,6 +4,7 @@ Defines the Item class for all in-game items.
 """
 import random
 from utils import format_currency
+from game_data import ITEM_ICONS
 
 class Item:
     """Represents an item in the game with a name, type, value, and potential effects."""
@@ -29,24 +30,34 @@ class Item:
         self.rarity = rarity
         self.color = color
 
+        # Assign an icon based on the item type/slot
+        self.icon = "❔" # Default icon
+        if self.item_type == "Ausrüstung" and self.slot:
+            self.icon = ITEM_ICONS.get(self.slot, "❔")
+        elif self.item_type == "Verbrauchsgut":
+            self.icon = ITEM_ICONS.get("Verbrauchsgut", "❔")
+
+
     def __str__(self):
-        """Returns a string representation of the item."""
+        """Returns a string representation of the item, including its icon."""
         value_str = format_currency(self.value)
+        display_name = f"{self.icon} {self.name}"
+
         if self.item_type == "Ausrüstung":
             boosts = []
             if self.stats_boost:
                 for stat, val in self.stats_boost.items():
                     boosts.append(f"{'+' if val >= 0 else ''}{val} {stat}")
             boost_str = ", ".join(boosts)
-            return f"{self.name} ({self.slot}) [{boost_str}] - {value_str}"
+            return f"{display_name} ({self.slot}) [{boost_str}] - {value_str}"
         elif self.item_type == "Verbrauchsgut":
             effects = []
             if self.stats_boost:
                 for stat, val in self.stats_boost.items():
                     effects.append(f"Stellt {val} {stat} wieder her")
             effect_str = ", ".join(effects)
-            return f"{self.name} [{effect_str}] - {value_str}"
-        return f"{self.name} - {value_str}"
+            return f"{display_name} [{effect_str}] - {value_str}"
+        return f"{display_name} - {value_str}"
 
     def get_weighted_score(self, main_stat, main_stat_weight=1.5):
         """
