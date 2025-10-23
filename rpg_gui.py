@@ -140,7 +140,7 @@ class RpgGui(ttk.Frame):
 
         try:
             img = Image.open(self.player.image_path)
-            img.thumbnail((150, 200))  # Resize while maintaining aspect ratio
+            img.thumbnail((220, 280))  # Resize while maintaining aspect ratio
             photo = ImageTk.PhotoImage(img)
 
             self.char_image_label.config(image=photo)
