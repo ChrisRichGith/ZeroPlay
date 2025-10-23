@@ -17,6 +17,7 @@ from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
+from highscore_manager import save_highscore
 from utils import format_currency, center_window
 
 # Liste verfügbarer Quests
@@ -375,7 +376,8 @@ class RpgGui(ttk.Frame):
 
     def handle_game_over(self):
         self.game_over = True
-        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
+        save_highscore(self.player)
+        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Deine Taten werden in der Halle der Helden verzeichnet.")
         if self.callbacks['game_over']:
             self.callbacks['game_over']()
 
