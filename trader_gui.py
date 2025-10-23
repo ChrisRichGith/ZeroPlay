@@ -109,6 +109,10 @@ class TraderWindow:
 
     def update_display(self):
         """Updates all display elements in the trader window."""
+        # Check if the window still exists before updating
+        if not self.window.winfo_exists():
+            return
+
         self.player_copper_var.set(format_currency(self.player.copper))
         self.upgrade_cost_var.set(f"Kosten: {format_currency(self.trader.get_upgrade_cost())}")
 
