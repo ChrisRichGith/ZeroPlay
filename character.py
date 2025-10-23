@@ -25,6 +25,7 @@ class Character:
         self.copper = 0
         # Load base attributes from the selected class
         self.attributes = CLASSES.get(klasse, {}).get("attributes", {'Stärke': 5, 'Intelligenz': 5, 'Glück': 5}).copy()
+        self.image_path = CLASSES.get(klasse, {}).get("image_path", "")
         self.inventory = []
         self.max_inventory_size = 10
         self.equipment = {'Kopf': None, 'Brust': None, 'Waffe': None}

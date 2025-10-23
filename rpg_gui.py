@@ -5,6 +5,12 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    messagebox.showerror("Abhängigkeit fehlt", "Pillow ist nicht installiert. Bilder werden nicht angezeigt.\nBitte 'pip install Pillow' ausführen.")
+    Image = None
+    ImageTk = None
 
 from character import Character
 from quest import Quest
@@ -90,25 +96,59 @@ class RpgGui(ttk.Frame):
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
         char_frame.pack(fill=tk.X, pady=(0, 10))
+        char_frame.columnconfigure(1, weight=1) # Allow stat frame to expand
+
+        # Stat details on the left
+        stats_container = ttk.Frame(char_frame)
+        stats_container.grid(row=0, column=0, sticky="nsew")
+
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(char_frame, textvariable=var).grid(row=i, column=1, sticky="w")
+            ttk.Label(stats_container, text=text).grid(row=i, column=0, sticky="w")
+            ttk.Label(stats_container, textvariable=var).grid(row=i, column=1, sticky="w")
 
-        attr_frame = ttk.LabelFrame(char_frame, text="Attribute", padding="5")
+        attr_frame = ttk.LabelFrame(stats_container, text="Attribute", padding="5")
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(char_frame, text=text, padding=5)
+            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
             frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
+
+        # Image on the right
+        image_container = ttk.Frame(char_frame)
+        image_container.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        image_container.rowconfigure(0, weight=1)
+        image_container.columnconfigure(0, weight=1)
+
+        self.char_image_label = ttk.Label(image_container, anchor="center")
+        self.char_image_label.grid(row=0, column=0, sticky="nsew")
+        self.load_character_image()
+
+    def load_character_image(self):
+        """Loads and displays the character's portrait."""
+        if not Image or not ImageTk:
+            self.char_image_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
+            return
+
+        try:
+            img = Image.open(self.player.image_path)
+            img.thumbnail((150, 200))  # Resize while maintaining aspect ratio
+            photo = ImageTk.PhotoImage(img)
+
+            self.char_image_label.config(image=photo)
+            self.char_image_label.image = photo  # Keep a reference!
+        except FileNotFoundError:
+            self.char_image_label.config(image=None, text=f"Bild nicht\ngefunden:\n{self.player.image_path}")
+        except Exception as e:
+            self.char_image_label.config(image=None, text=f"Fehler beim\nLaden des Bildes:\n{e}")
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
