@@ -90,40 +90,42 @@ class RpgGui(ttk.Frame):
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.pack(fill=tk.X, pady=(0, 10))
+        char_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        char_frame.columnconfigure(1, weight=1) # Make the image column expand
 
-        # Left side for the portrait
-        self.portrait_label = ttk.Label(char_frame)
-        self.portrait_label.grid(row=0, column=0, rowspan=4, padx=(0, 10), sticky="nw")
-        self.character_portrait = None # To hold the PhotoImage reference
+        # --- Left Column: Stats ---
+        stats_container = ttk.Frame(char_frame)
+        stats_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        # Right side for the stats
-        stats_frame = ttk.Frame(char_frame)
-        stats_frame.grid(row=0, column=1, sticky="nw")
-
+        # Basic Info
+        basic_info_frame = ttk.Frame(stats_container)
+        basic_info_frame.pack(fill=tk.X)
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Münzen:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(stats_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(stats_frame, textvariable=var).grid(row=i, column=1, sticky="w")
+            ttk.Label(basic_info_frame, text=text).grid(row=i, column=0, sticky="w")
+            ttk.Label(basic_info_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
-        attr_frame = ttk.LabelFrame(stats_frame, text="Attribute", padding="5")
-        attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        # Attributes
+        attr_frame = ttk.LabelFrame(stats_container, text="Attribute", padding="5")
+        attr_frame.pack(fill=tk.X, pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
-        # Resource bars below everything
-        bars_frame = ttk.Frame(char_frame)
-        bars_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-
+        # Resource Bars
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(bars_frame, text=text, padding=5)
-            frame.pack(fill=tk.X, expand=True, pady=(0, 5))
+            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
+            frame.pack(fill=tk.X, pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
+
+        # --- Right Column: Portrait ---
+        self.portrait_label = ttk.Label(char_frame)
+        self.portrait_label.grid(row=0, column=1, sticky="nsew")
+        self.character_portrait = None # To hold the PhotoImage reference
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
@@ -209,7 +211,7 @@ class RpgGui(ttk.Frame):
         # Update Character Portrait
         try:
             img = Image.open(self.player.image_path)
-            img = img.resize((100, 100), Image.Resampling.LANCZOS)
+            img = img.resize((250, 250), Image.Resampling.LANCZOS)
             self.character_portrait = ImageTk.PhotoImage(img)
             self.portrait_label.config(image=self.character_portrait)
         except (FileNotFoundError, AttributeError):
