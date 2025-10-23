@@ -164,22 +164,30 @@ class RpgGui(ttk.Frame):
 
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
-    def get_tooltip_text(self):
-        """Callback function to get the text for the tooltip."""
+    def get_tooltip_text(self, index):
+        """Callback function to get the text for the tooltip for a specific item index."""
         try:
-            # Get the item under the mouse cursor
-            _, y, _, _ = self.inventory_listbox.bbox(self.inventory_listbox.curselection()[0])
-            index = self.inventory_listbox.nearest(y)
             item = self.player.inventory[index]
 
             # Format the text
-            text = f"{item.name}\n"
-            text += f"Typ: {item.item_type} ({item.slot})\n"
-            text += f"Wert: {format_currency(item.value)}\n\n"
-            for stat, value in item.stats_boost.items():
-                text += f"{stat}: +{value}\n"
+            # Use item.name directly, as the icon is now part of __str__ but not the base name
+            text = f"{item.name} ({item.rarity})\n"
+            if item.slot:
+                text += f"Typ: {item.item_type} ({item.slot})\n"
+            else:
+                text += f"Typ: {item.item_type}\n"
+
+            text += f"Wert: {format_currency(item.value)}\n"
+
+            if item.stats_boost:
+                text += "\n" # Add a newline only if there are stats
+                for stat, value in item.stats_boost.items():
+                    if item.item_type == "Verbrauchsgut":
+                         text += f"Stellt {value} {stat} wieder her\n"
+                    else:
+                        text += f"{stat}: +{value}\n"
             return text.strip()
-        except (IndexError, tk.TclError):
+        except IndexError:
             return ""
 
     def update_display(self):
@@ -340,57 +348,56 @@ class RpgGui(ttk.Frame):
             self.callbacks['game_over']()
 
 class Tooltip:
-    """
-    Create a tooltip for a given widget.
-    """
+    """Create a tooltip that updates on motion for a given widget."""
     def __init__(self, widget, text_callback):
         self.widget = widget
         self.text_callback = text_callback
         self.tip_window = None
         self.id = None
-        self.x = self.y = 0
-        self.widget.bind("<Enter>", self.enter)
-        self.widget.bind("<Leave>", self.leave)
-        self.widget.bind("<Motion>", self.motion)
+        self.last_index = -1
 
-    def enter(self, event=None):
-        # Store the mouse position
-        self.x = event.x_root
-        self.y = event.y_root
-        self.schedule()
+        self.widget.bind("<Motion>", self.on_motion)
+        self.widget.bind("<Leave>", self.on_leave)
 
-    def leave(self, event=None):
+    def on_motion(self, event):
+        """Schedules a tooltip to appear when the mouse moves over a new item."""
+        try:
+            index = self.widget.nearest(event.y)
+            # Check if cursor is within the bounding box of the item
+            bbox = self.widget.bbox(index)
+            if not (bbox[0] < event.x < bbox[0] + bbox[2] and bbox[1] < event.y < bbox[1] + bbox[3]):
+                self.on_leave()
+                return
+        except (tk.TclError, IndexError):
+            self.on_leave()
+            return
+
+        if index != self.last_index:
+            self.unschedule()
+            self.hidetip()
+            self.last_index = index
+            self.id = self.widget.after(500, lambda: self.showtip(event, index))
+
+    def on_leave(self, event=None):
+        """Hides the tooltip when the mouse leaves the widget."""
         self.unschedule()
         self.hidetip()
-
-    def motion(self, event=None):
-        # Update the mouse position
-        self.x = event.x_root
-        self.y = event.y_root
-        # If the tooltip is already visible, move it
-        if self.tip_window:
-            self.tip_window.wm_geometry(f"+{self.x + 25}+{self.y + 20}")
-
-    def schedule(self):
-        self.unschedule()
-        self.id = self.widget.after(500, self.showtip)
+        self.last_index = -1
 
     def unschedule(self):
-        id = self.id
-        self.id = None
-        if id:
-            self.widget.after_cancel(id)
+        if self.id:
+            self.widget.after_cancel(self.id)
+            self.id = None
 
-    def showtip(self):
-        text = self.text_callback()
+    def showtip(self, event, index):
+        """Shows the tooltip with the correct text at the correct position."""
+        text = self.text_callback(index)
         if not text:
             return
 
-        # Use the stored mouse coordinates
-        x = self.x + 25
-        y = self.y + 20
+        x = event.x_root + 25
+        y = event.y_root + 20
 
-        # Create the tooltip window if it doesn't exist
         if self.tip_window is None:
             self.tip_window = tk.Toplevel(self.widget)
             self.tip_window.wm_overrideredirect(True)
@@ -402,10 +409,9 @@ class Tooltip:
         self.tip_window.wm_geometry(f"+{x}+{y}")
 
     def hidetip(self):
-        tw = self.tip_window
-        self.tip_window = None
-        if tw:
-            tw.destroy()
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
 
 class CountdownDialog(tk.Toplevel):
     """A modal dialog with a countdown timer that closes automatically."""
