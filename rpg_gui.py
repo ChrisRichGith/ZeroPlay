@@ -5,6 +5,7 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+from PIL import Image, ImageTk
 
 from character import Character
 from quest import Quest
@@ -90,20 +91,34 @@ class RpgGui(ttk.Frame):
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
         char_frame.pack(fill=tk.X, pady=(0, 10))
-        labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
-        for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(char_frame, textvariable=var).grid(row=i, column=1, sticky="w")
 
-        attr_frame = ttk.LabelFrame(char_frame, text="Attribute", padding="5")
+        # Left side for the portrait
+        self.portrait_label = ttk.Label(char_frame)
+        self.portrait_label.grid(row=0, column=0, rowspan=4, padx=(0, 10), sticky="nw")
+        self.character_portrait = None # To hold the PhotoImage reference
+
+        # Right side for the stats
+        stats_frame = ttk.Frame(char_frame)
+        stats_frame.grid(row=0, column=1, sticky="nw")
+
+        labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Münzen:": self.char_gold_var}
+        for i, (text, var) in enumerate(labels.items()):
+            ttk.Label(stats_frame, text=text).grid(row=i, column=0, sticky="w")
+            ttk.Label(stats_frame, textvariable=var).grid(row=i, column=1, sticky="w")
+
+        attr_frame = ttk.LabelFrame(stats_frame, text="Attribute", padding="5")
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
+        # Resource bars below everything
+        bars_frame = ttk.Frame(char_frame)
+        bars_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(char_frame, text=text, padding=5)
-            frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+            frame = ttk.LabelFrame(bars_frame, text=text, padding=5)
+            frame.pack(fill=tk.X, expand=True, pady=(0, 5))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
@@ -191,6 +206,16 @@ class RpgGui(ttk.Frame):
             return ""
 
     def update_display(self):
+        # Update Character Portrait
+        try:
+            img = Image.open(self.player.image_path)
+            img = img.resize((100, 100), Image.Resampling.LANCZOS)
+            self.character_portrait = ImageTk.PhotoImage(img)
+            self.portrait_label.config(image=self.character_portrait)
+        except (FileNotFoundError, AttributeError):
+            self.portrait_label.config(image='')
+            self.character_portrait = None
+
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
         self.char_gold_var.set(format_currency(self.player.copper))
