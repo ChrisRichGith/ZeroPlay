@@ -62,15 +62,15 @@ class RpgGui(ttk.Frame):
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
         # Main layout grid
-        self.columnconfigure(0, weight=1, uniform="group1")
-        self.columnconfigure(1, weight=0) # Actions column should not expand
-        self.columnconfigure(2, weight=1, uniform="group1")
-        self.rowconfigure(0, weight=1) # Top area with character, actions, inventory
+        self.columnconfigure(0, weight=2) # Character status (wider)
+        self.columnconfigure(1, weight=0) # Actions (narrow)
+        self.columnconfigure(2, weight=1) # Inventory (normal)
+        self.rowconfigure(0, weight=1) # Top area
         self.rowconfigure(1, weight=0) # Bottom area for the log
 
         # Create main frames for each section
-        char_frame = ttk.Frame(self)
-        char_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        char_frame_container = ttk.Frame(self)
+        char_frame_container.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
         actions_frame = ttk.Frame(self)
         actions_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
@@ -85,8 +85,7 @@ class RpgGui(ttk.Frame):
         log_frame.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=10, pady=(0, 10))
 
         # Populate the frames
-        self._create_character_frame(char_frame)
-        self._create_portrait_frame(char_frame)
+        self._create_character_frame(char_frame_container)
         self._create_actions_frame(actions_frame)
 
         # Create and populate the notebook for equipment and inventory
@@ -104,7 +103,10 @@ class RpgGui(ttk.Frame):
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.pack(fill=tk.X, pady=(0, 10), anchor='n')
+        char_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10), anchor='n')
+        char_frame.columnconfigure(2, weight=1) # Allow portrait column to expand
+
+        # --- Left side: Stats ---
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
             ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
@@ -125,13 +127,9 @@ class RpgGui(ttk.Frame):
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
 
-    def _create_portrait_frame(self, parent):
-        """Creates the frame and label to display the character's portrait."""
-        self.portrait_frame = ttk.Frame(parent)
-        self.portrait_frame.pack(fill=tk.BOTH, expand=True, side=tk.RIGHT, anchor='n', padx=5)
-
-        self.portrait_label = ttk.Label(self.portrait_frame)
-        self.portrait_label.pack(fill=tk.BOTH, expand=True)
+        # --- Right side: Portrait ---
+        self.portrait_label = ttk.Label(char_frame)
+        self.portrait_label.grid(row=0, column=2, rowspan=7, sticky="nsew", padx=(20, 0))
 
         try:
             if self.player.image_path:
