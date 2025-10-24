@@ -5,14 +5,21 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
-from PIL import Image, ImageTk
 import os
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    messagebox.showerror("Abhängigkeit fehlt", "Pillow ist nicht installiert. Bilder werden nicht angezeigt.\nBitte 'pip install Pillow' ausführen.")
+    Image = None
+    ImageTk = None
 
 from character import Character
 from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
+from highscore_manager import save_highscore
+from game_over_gui import GameOverWindow
 from utils import format_currency, center_window
 
 # Liste verfügbarer Quests
@@ -62,29 +69,25 @@ class RpgGui(ttk.Frame):
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
-        # Main layout frames
-        self.columnconfigure(0, weight=1, minsize=400) # Left column for stats and actions
-        self.columnconfigure(1, weight=2)              # Right column for portrait and inventory
+        self.columnconfigure(0, weight=1, minsize=400)
+        self.columnconfigure(1, weight=2)
         self.rowconfigure(0, weight=1)
 
-        # --- Left Column ---
         left_column_frame = ttk.Frame(self)
         left_column_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        left_column_frame.rowconfigure(1, weight=1) # Let the actions frame expand
+        left_column_frame.rowconfigure(1, weight=1)
 
         self._create_character_frame(left_column_frame)
         self._create_actions_frame(left_column_frame)
 
-        # --- Right Column ---
         right_column_frame = ttk.Frame(self)
         right_column_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        right_column_frame.rowconfigure(0, weight=3) # Give more weight to the portrait
-        right_column_frame.rowconfigure(1, weight=2) # Less weight to the notebook
+        right_column_frame.rowconfigure(0, weight=3)
+        right_column_frame.rowconfigure(1, weight=2)
         right_column_frame.columnconfigure(0, weight=1)
 
         self._create_portrait_frame(right_column_frame)
 
-        # Notebook for Inventory and Equipment
         notebook = ttk.Notebook(right_column_frame)
         notebook.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         equipment_tab = ttk.Frame(notebook)
@@ -95,12 +98,10 @@ class RpgGui(ttk.Frame):
         self._create_inventory_frame(inventory_tab)
 
     def _create_portrait_frame(self, parent):
-        """Creates the frame and label for the character portrait."""
         portrait_frame = ttk.LabelFrame(parent, text="Porträt", padding="10")
         portrait_frame.grid(row=0, column=0, sticky="nsew")
         portrait_frame.columnconfigure(0, weight=1)
         portrait_frame.rowconfigure(0, weight=1)
-
         self.portrait_label = ttk.Label(portrait_frame, anchor="center")
         self.portrait_label.grid(row=0, column=0, sticky="nsew")
 
@@ -111,13 +112,11 @@ class RpgGui(ttk.Frame):
         for i, (text, var) in enumerate(labels.items()):
             ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
             ttk.Label(char_frame, textvariable=var).grid(row=i, column=1, sticky="w")
-
         attr_frame = ttk.LabelFrame(char_frame, text="Attribute", padding="5")
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
-
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
             frame = ttk.LabelFrame(char_frame, text=text, padding=5)
             frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
@@ -130,32 +129,21 @@ class RpgGui(ttk.Frame):
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
         actions_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
-        actions_frame.columnconfigure(0, weight=1) # Allow buttons to expand
-
-        buttons = [
-            ("Neue Quest beginnen", self.start_quest),
-            ("Auto-Quest starten", self.toggle_auto_quest),
-            ("Händler besuchen", self.open_trader_window),
-            ("Gegenstand ausrüsten", self.equip_item),
-            ("Gegenstand benutzen", self.use_item)
-        ]
-
+        actions_frame.columnconfigure(0, weight=1)
+        buttons = [("Neue Quest beginnen", self.start_quest), ("Auto-Quest starten", self.toggle_auto_quest),
+                   ("Händler besuchen", self.open_trader_window), ("Gegenstand ausrüsten", self.equip_item),
+                   ("Gegenstand benutzen", self.use_item)]
         for i, (text, command) in enumerate(buttons):
             button = ttk.Button(actions_frame, text=text, command=command)
             button.grid(row=i, column=0, sticky="ew", pady=2)
             setattr(self, f"{text.lower().replace(' ', '_')}_button", button)
-
         self.auto_quest_button = getattr(self, "auto-quest_starten_button")
         self.quest_button = getattr(self, "neue_quest_beginnen_button")
         self.trader_button = getattr(self, "händler_besuchen_button")
         self.equip_button = getattr(self, "gegenstand_ausrüsten_button")
         self.use_button = getattr(self, "gegenstand_benutzen_button")
-
-
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.grid(row=len(buttons), column=0, sticky="ew", pady=(10, 5))
-
-        # Quest Log
         log_frame = ttk.LabelFrame(actions_frame, text="Log", padding=5)
         log_frame.grid(row=len(buttons) + 1, column=0, sticky="nsew", pady=5)
         log_frame.columnconfigure(0, weight=1)
@@ -166,7 +154,6 @@ class RpgGui(ttk.Frame):
         self.quest_log.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.quest_log.config(state=tk.DISABLED)
-
         self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="#2B2B2B", fg="gold", relief="flat")
         self.loot_status_text.grid(row=len(buttons) + 2, column=0, sticky="ew", pady=5)
         self.loot_status_text.config(state=tk.DISABLED)
@@ -192,54 +179,47 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
-
+        self.inventory_listbox.bind('<Double-1>', self.on_item_double_click)
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
-    def get_tooltip_text(self):
-        """Callback function to get the text for the tooltip."""
+    def get_tooltip_text(self, index):
         try:
-            # Get the item under the mouse cursor
-            _, y, _, _ = self.inventory_listbox.bbox(self.inventory_listbox.curselection()[0])
-            index = self.inventory_listbox.nearest(y)
             item = self.player.inventory[index]
-
-            # Format the text
-            text = f"{item.name}\n"
-            text += f"Typ: {item.item_type} ({item.slot})\n"
-            text += f"Wert: {format_currency(item.value)}\n\n"
-            for stat, value in item.stats_boost.items():
-                text += f"{stat}: +{value}\n"
+            text = f"{item.name} ({item.rarity})\n"
+            if item.slot:
+                text += f"Typ: {item.item_type} ({item.slot})\n"
+            else:
+                text += f"Typ: {item.item_type}\n"
+            text += f"Wert: {format_currency(item.value)}\n"
+            if item.stats_boost:
+                text += "\n"
+                for stat, value in item.stats_boost.items():
+                    if item.item_type == "Verbrauchsgut":
+                        text += f"Stellt {value} {stat} wieder her\n"
+                    else:
+                        text += f"{stat}: +{value}\n"
             return text.strip()
-        except (IndexError, tk.TclError):
+        except IndexError:
             return ""
 
     def _update_character_image(self, image_path):
-        """Loads, resizes, and displays the character image."""
+        if not Image or not ImageTk:
+            self.portrait_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
+            return
         if not image_path or not os.path.exists(image_path):
-            # Create a placeholder image if the path is invalid
-            placeholder = Image.new('RGBA', (220, 280), (60, 60, 60, 255))
-            img = placeholder
+            img = Image.new('RGBA', (220, 280), (60, 60, 60, 255))
         else:
             try:
                 img = Image.open(image_path)
             except IOError:
-                # Handle cases where the file is corrupted
-                img = Image.new('RGBA', (220, 280), (255, 0, 0, 255)) # Red error placeholder
-
-        # Resize the image to fit the label area while maintaining aspect ratio
+                img = Image.new('RGBA', (220, 280), (255, 0, 0, 255))
         img.thumbnail((220, 280), Image.Resampling.LANCZOS)
-
-        # Create a new blank image with a transparent background
         bg = Image.new('RGBA', (220, 280), (0, 0, 0, 0))
-
-        # Calculate coordinates to paste the resized image in the center
         paste_x = (bg.width - img.width) // 2
         paste_y = (bg.height - img.height) // 2
         bg.paste(img, (paste_x, paste_y))
-
         photo_img = ImageTk.PhotoImage(bg)
         self.portrait_label.config(image=photo_img)
-        # Keep a reference to prevent garbage collection
         self.portrait_label.image = photo_img
 
     def update_display(self):
@@ -264,7 +244,6 @@ class RpgGui(ttk.Frame):
                 item_text = "⭐ " + item_text
             self.inventory_listbox.insert(tk.END, item_text)
             self.inventory_listbox.itemconfig(i, {'fg': item.color})
-
         self.lp_label_var.set(f"{self.player.current_lp} / {self.player.max_lp} LP")
         self.lp_bar['value'] = (self.player.current_lp / self.player.max_lp) * 100 if self.player.max_lp > 0 else 0
         self.mp_label_var.set(f"{self.player.current_mp} / {self.player.max_mp} MP")
@@ -319,7 +298,6 @@ class RpgGui(ttk.Frame):
         event_message = self.current_quest.advance(self.player)
         if event_message:
             self.add_to_log(event_message)
-
         if self.player.current_lp <= 0:
             self.handle_game_over()
             return
@@ -364,6 +342,17 @@ class RpgGui(ttk.Frame):
             messagebox.showwarning("Fehler", message)
         self.update_display()
 
+    def on_item_double_click(self, event=None):
+        selected_indices = self.inventory_listbox.curselection()
+        if not selected_indices:
+            return
+        item_index = selected_indices[0]
+        selected_item = self.player.inventory[item_index]
+        if selected_item.item_type == "Ausrüstung":
+            self.equip_item()
+        elif selected_item.item_type == "Verbrauchsgut":
+            self.use_item()
+
     def update_button_states(self, event=None):
         is_questing = self.current_quest is not None
         selected_indices = self.inventory_listbox.curselection()
@@ -396,63 +385,59 @@ class RpgGui(ttk.Frame):
 
     def handle_game_over(self):
         self.game_over = True
+        save_highscore(self.player)
         self._update_character_image('assets/tombstone.png')
-        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
-        if self.callbacks['game_over']:
-            self.callbacks['game_over']()
+        for widget in self.winfo_children():
+            try:
+                if isinstance(widget, ttk.Frame):
+                    for child in widget.winfo_children():
+                        child.config(state=tk.DISABLED)
+            except tk.TclError:
+                pass # Ignore errors for widgets that don't support 'state'
+        GameOverWindow(self, self.player, on_close_callback=self.callbacks['game_over'])
 
 class Tooltip:
-    """
-    Create a tooltip for a given widget.
-    """
     def __init__(self, widget, text_callback):
         self.widget = widget
         self.text_callback = text_callback
         self.tip_window = None
         self.id = None
-        self.x = self.y = 0
-        self.widget.bind("<Enter>", self.enter)
-        self.widget.bind("<Leave>", self.leave)
-        self.widget.bind("<Motion>", self.motion)
+        self.last_index = -1
+        self.widget.bind("<Motion>", self.on_motion)
+        self.widget.bind("<Leave>", self.on_leave)
 
-    def enter(self, event=None):
-        # Store the mouse position
-        self.x = event.x_root
-        self.y = event.y_root
-        self.schedule()
+    def on_motion(self, event):
+        try:
+            index = self.widget.nearest(event.y)
+            bbox = self.widget.bbox(index)
+            if not (bbox[0] < event.x < bbox[0] + bbox[2] and bbox[1] < event.y < bbox[1] + bbox[3]):
+                self.on_leave()
+                return
+        except (tk.TclError, IndexError):
+            self.on_leave()
+            return
+        if index != self.last_index:
+            self.unschedule()
+            self.hidetip()
+            self.last_index = index
+            self.id = self.widget.after(500, lambda: self.showtip(event, index))
 
-    def leave(self, event=None):
+    def on_leave(self, event=None):
         self.unschedule()
         self.hidetip()
-
-    def motion(self, event=None):
-        # Update the mouse position
-        self.x = event.x_root
-        self.y = event.y_root
-        # If the tooltip is already visible, move it
-        if self.tip_window:
-            self.tip_window.wm_geometry(f"+{self.x + 25}+{self.y + 20}")
-
-    def schedule(self):
-        self.unschedule()
-        self.id = self.widget.after(500, self.showtip)
+        self.last_index = -1
 
     def unschedule(self):
-        id = self.id
-        self.id = None
-        if id:
-            self.widget.after_cancel(id)
+        if self.id:
+            self.widget.after_cancel(self.id)
+            self.id = None
 
-    def showtip(self):
-        text = self.text_callback()
+    def showtip(self, event, index):
+        text = self.text_callback(index)
         if not text:
             return
-
-        # Use the stored mouse coordinates
-        x = self.x + 25
-        y = self.y + 20
-
-        # Create the tooltip window if it doesn't exist
+        x = event.x_root + 25
+        y = event.y_root + 20
         if self.tip_window is None:
             self.tip_window = tk.Toplevel(self.widget)
             self.tip_window.wm_overrideredirect(True)
@@ -460,14 +445,12 @@ class Tooltip:
                              background="#ffffe0", relief=tk.SOLID, borderwidth=1,
                              font=("tahoma", "8", "normal"))
             label.pack(ipadx=1)
-
         self.tip_window.wm_geometry(f"+{x}+{y}")
 
     def hidetip(self):
-        tw = self.tip_window
-        self.tip_window = None
-        if tw:
-            tw.destroy()
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
 
 class CountdownDialog(tk.Toplevel):
     """A modal dialog with a countdown timer that closes automatically."""
@@ -477,27 +460,16 @@ class CountdownDialog(tk.Toplevel):
         self.message = message
         self.countdown = countdown
         self.parent = parent
-
-        # Make window modal
         self.transient(parent)
         self.grab_set()
-
-        # UI Elements
         ttk.Label(self, text=self.message, wraplength=300, justify=tk.LEFT).pack(padx=20, pady=10)
-
         self.countdown_label = ttk.Label(self, text=f"Schließt in {self.countdown} Sekunden...")
         self.countdown_label.pack(pady=5)
-
         ok_button = ttk.Button(self, text="OK", command=self.destroy)
         ok_button.pack(pady=10, padx=20, fill=tk.X)
-
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-
-        # Center the window
         self.update_idletasks()
         center_window(self)
-
-        # Start the countdown
         self.update_countdown()
 
     def update_countdown(self):
@@ -509,7 +481,6 @@ class CountdownDialog(tk.Toplevel):
             self.destroy()
 
     def destroy(self):
-        # Cancel the pending `after` call before destroying the window
         if hasattr(self, '_after_id'):
             self.after_cancel(self._after_id)
         super().destroy()
