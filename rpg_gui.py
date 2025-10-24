@@ -5,6 +5,7 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+from PIL import Image, ImageTk
 
 try:
     from PIL import Image, ImageTk
@@ -69,27 +70,7 @@ class RpgGui(ttk.Frame):
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
-        self.columnconfigure(0, weight=1, minsize=400)
-        self.columnconfigure(1, weight=2)
-        self.rowconfigure(0, weight=1)
 
-        left_column_frame = ttk.Frame(self)
-        left_column_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        left_column_frame.rowconfigure(1, weight=1)
-
-        self._create_character_frame(left_column_frame)
-        self._create_actions_frame(left_column_frame)
-
-        right_column_frame = ttk.Frame(self)
-        right_column_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        right_column_frame.rowconfigure(0, weight=3)
-        right_column_frame.rowconfigure(1, weight=2)
-        right_column_frame.columnconfigure(0, weight=1)
-
-        self._create_portrait_frame(right_column_frame)
-
-        notebook = ttk.Notebook(right_column_frame)
-        notebook.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         equipment_tab = ttk.Frame(notebook)
         inventory_tab = ttk.Frame(notebook)
         notebook.add(equipment_tab, text='Ausrüstung')
@@ -97,16 +78,7 @@ class RpgGui(ttk.Frame):
         self._create_equipment_frame(equipment_tab)
         self._create_inventory_frame(inventory_tab)
 
-    def _create_portrait_frame(self, parent):
-        portrait_frame = ttk.LabelFrame(parent, text="Porträt", padding="10")
-        portrait_frame.grid(row=0, column=0, sticky="nsew")
-        portrait_frame.columnconfigure(0, weight=1)
-        portrait_frame.rowconfigure(0, weight=1)
-        self.portrait_label = ttk.Label(portrait_frame, anchor="center")
-        self.portrait_label.grid(row=0, column=0, sticky="nsew")
 
-    def _create_character_frame(self, parent):
-        char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
 
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
@@ -121,83 +93,15 @@ class RpgGui(ttk.Frame):
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
 
-        # Image on the right
-        image_container = ttk.Frame(char_frame)
-        image_container.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
-        image_container.rowconfigure(0, weight=1)
-        image_container.columnconfigure(0, weight=1)
 
-        self.char_image_label = ttk.Label(image_container, anchor="center")
-        self.char_image_label.grid(row=0, column=0, sticky="nsew")
-        self.load_character_image()
-
-    def load_character_image(self):
-        """Loads and displays the character's portrait."""
-        if not Image or not ImageTk:
-            self.char_image_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
-            return
-
-        try:
-            img = Image.open(self.player.image_path)
-            img.thumbnail((220, 280))  # Resize while maintaining aspect ratio
-            photo = ImageTk.PhotoImage(img)
-
-            self.char_image_label.config(image=photo)
-            self.char_image_label.image = photo  # Keep a reference!
-        except FileNotFoundError:
-            self.char_image_label.config(image=None, text=f"Bild nicht\ngefunden:\n{self.player.image_path}")
-        except Exception as e:
-            self.char_image_label.config(image=None, text=f"Fehler beim\nLaden des Bildes:\n{e}")
-
-    def _create_actions_frame(self, parent):
-        actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
-        actions_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
-        actions_frame.columnconfigure(0, weight=1)
-        actions_frame.columnconfigure(1, weight=2) # Give more space to the log
-
-        # --- Button Column ---
-        button_container = ttk.Frame(actions_frame)
-        button_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        button_container.columnconfigure(0, weight=1)
-
-        buttons = [("Neue Quest beginnen", self.start_quest), ("Auto-Quest starten", self.toggle_auto_quest),
-                   ("Händler besuchen", self.open_trader_window), ("Gegenstand ausrüsten", self.equip_item),
-                   ("Gegenstand benutzen", self.use_item)]
-        for i, (text, command) in enumerate(buttons):
-            button = ttk.Button(button_container, text=text, command=command)
-            button.grid(row=i, column=0, sticky="ew", pady=2)
-            setattr(self, f"{text.lower().replace(' ', '_')}_button", button)
-
-        self.auto_quest_button = getattr(self, "auto-quest_starten_button")
-        self.quest_button = getattr(self, "neue_quest_beginnen_button")
-        self.trader_button = getattr(self, "händler_besuchen_button")
-        self.equip_button = getattr(self, "gegenstand_ausrüsten_button")
-        self.use_button = getattr(self, "gegenstand_benutzen_button")
-
-        self.progress_bar = ttk.Progressbar(button_container, orient='horizontal', mode='determinate', length=200)
-        self.progress_bar.grid(row=len(buttons), column=0, sticky="ew", pady=(10, 5))
-
-        self.loot_status_text = tk.Text(button_container, height=2, wrap=tk.WORD, bg="#2B2B2B", fg="gold", relief="flat")
-        self.loot_status_text.grid(row=len(buttons) + 1, column=0, sticky="ew", pady=(5, 0))
-        self.loot_status_text.config(state=tk.DISABLED)
-
-        # --- Quest Log Column ---
-        log_frame = ttk.LabelFrame(actions_frame, text="Log", padding=5)
-        log_frame.grid(row=0, column=1, sticky="nsew")
-        log_frame.columnconfigure(0, weight=1)
-        log_frame.rowconfigure(0, weight=1)
-
-        self.quest_log = tk.Text(log_frame, wrap=tk.WORD, bg="#2B2B2B", fg="white", relief="flat")
-        self.quest_log.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
         self.quest_log.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.quest_log.config(state=tk.DISABLED)
 
     def _create_equipment_frame(self, parent):
-        parent.columnconfigure(0, weight=1)
+        parent.columnconfigure(1, weight=1)
         equip_frame = ttk.LabelFrame(parent, text="Angelegte Ausrüstung", padding="10")
-        equip_frame.grid(row=0, column=0, sticky="new", padx=10, pady=10)
+        equip_frame.pack(fill=tk.X, padx=10, pady=10)
         for i, (slot, var) in enumerate(self.equipment_vars.items()):
             ttk.Label(equip_frame, text=f"{slot}:").grid(row=i, column=0, sticky="w")
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
@@ -206,7 +110,7 @@ class RpgGui(ttk.Frame):
         parent.rowconfigure(0, weight=1)
         parent.columnconfigure(0, weight=1)
         self.inv_frame = ttk.LabelFrame(parent, text="Rucksack", padding="10")
-        self.inv_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.inv_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inv_frame.rowconfigure(0, weight=1)
         self.inv_frame.columnconfigure(0, weight=1)
         self.inventory_listbox = tk.Listbox(self.inv_frame, bg="#2B2B2B", fg="white", selectbackground="#0078D7")
@@ -333,7 +237,8 @@ class RpgGui(ttk.Frame):
     def advance_quest(self):
         if self.current_quest is None: return
         event_message = self.current_quest.advance(self.player)
-        if event_message:
+        # Only log the final message when the quest is complete
+        if event_message and self.current_quest.is_complete():
             self.add_to_log(event_message)
         if self.player.current_lp <= 0:
             self.handle_game_over()
@@ -380,11 +285,7 @@ class RpgGui(ttk.Frame):
         self.update_display()
 
     def on_item_double_click(self, event=None):
-        selected_indices = self.inventory_listbox.curselection()
-        if not selected_indices:
-            return
-        item_index = selected_indices[0]
-        selected_item = self.player.inventory[item_index]
+
         if selected_item.item_type == "Ausrüstung":
             self.equip_item()
         elif selected_item.item_type == "Verbrauchsgut":
