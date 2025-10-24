@@ -4,6 +4,7 @@ Handles saving and loading of game states using pickle.
 """
 import os
 import pickle
+from game_data import CLASSES
 
 SAVE_DIR = "saves"
 
@@ -39,7 +40,13 @@ def load_game(character_name):
     if os.path.exists(filename):
         try:
             with open(filename, 'rb') as f:
-                return pickle.load(f)
+                character = pickle.load(f)
+                # --- Backwards compatibility patch ---
+                # Check if the loaded character has the image_path attribute.
+                # If not, it's an old save file. Add it dynamically.
+                if not hasattr(character, 'image_path'):
+                    character.image_path = CLASSES.get(character.klasse, {}).get("image_path", "")
+                return character
         except Exception as e:
             print(f"Fehler beim Laden von {character_name}: {e}")
             return None

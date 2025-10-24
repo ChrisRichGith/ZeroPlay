@@ -7,11 +7,14 @@ from tkinter import ttk, simpledialog, messagebox
 import random
 from PIL import Image, ImageTk
 
+
 from character import Character
 from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
+from highscore_manager import save_highscore
+from game_over_gui import GameOverWindow
 from utils import format_currency, center_window
 
 # Liste verfügbarer Quests
@@ -61,106 +64,31 @@ class RpgGui(ttk.Frame):
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=1)
-
-        left_pane = ttk.Frame(self, width=300)
-        left_pane.grid(row=0, column=0, sticky="ns", padx=10, pady=10)
-
-        right_pane = ttk.Frame(self)
-        right_pane.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        right_pane.columnconfigure(0, weight=1)
-        right_pane.rowconfigure(0, weight=1)
-
-        self._create_character_frame(left_pane)
-        self._create_actions_frame(left_pane)
-
-        # Create a notebook for equipment and inventory
-        notebook = ttk.Notebook(right_pane)
-        notebook.grid(row=0, column=0, sticky="nsew")
 
         equipment_tab = ttk.Frame(notebook)
         inventory_tab = ttk.Frame(notebook)
         notebook.add(equipment_tab, text='Ausrüstung')
         notebook.add(inventory_tab, text='Inventar')
-
         self._create_equipment_frame(equipment_tab)
         self._create_inventory_frame(inventory_tab)
 
 
-    def _create_character_frame(self, parent):
-        char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-        char_frame.columnconfigure(1, weight=1) # Make the image column expand
 
-        # --- Left Column: Stats ---
-        stats_container = ttk.Frame(char_frame)
-        stats_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-
-        # Basic Info
-        basic_info_frame = ttk.Frame(stats_container)
-        basic_info_frame.pack(fill=tk.X)
-        labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Münzen:": self.char_gold_var}
-        for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(basic_info_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(basic_info_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
-
-        # Attributes
-        attr_frame = ttk.LabelFrame(stats_container, text="Attribute", padding="5")
-        attr_frame.pack(fill=tk.X, pady=(10, 0))
-        for i, (stat, var) in enumerate(self.stats_vars.items()):
-            ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
-            ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
-
-        # Resource Bars
-        for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
-            frame.pack(fill=tk.X, pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
 
-        # --- Right Column: Portrait ---
-        self.portrait_label = ttk.Label(char_frame)
-        self.portrait_label.grid(row=0, column=1, sticky="nsew")
-        self.character_portrait = None # To hold the PhotoImage reference
 
-    def _create_actions_frame(self, parent):
-        actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
-        actions_frame.pack(fill=tk.X)
-        self.quest_button = ttk.Button(actions_frame, text="Neue Quest beginnen", command=self.start_quest)
-        self.quest_button.pack(fill=tk.X, pady=5)
-        self.auto_quest_button = ttk.Button(actions_frame, text="Auto-Quest starten", command=self.toggle_auto_quest)
-        self.auto_quest_button.pack(fill=tk.X, pady=5)
-        self.trader_button = ttk.Button(actions_frame, text="Händler besuchen", command=self.open_trader_window)
-        self.trader_button.pack(fill=tk.X, pady=5)
-        self.equip_button = ttk.Button(actions_frame, text="Gegenstand ausrüsten", command=self.equip_item)
-        self.equip_button.pack(fill=tk.X, pady=5)
-        self.use_button = ttk.Button(actions_frame, text="Gegenstand benutzen", command=self.use_item)
-        self.use_button.pack(fill=tk.X, pady=5)
-        self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
-        self.progress_bar.pack(fill=tk.X, pady=(10, 5))
-
-        # Quest Log
-        log_frame = ttk.Frame(actions_frame)
-        log_frame.pack(fill=tk.X, pady=5)
-        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="lightgrey", relief="flat")
-        self.quest_log.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
         self.quest_log.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar.grid(row=0, column=1, sticky="ns")
         self.quest_log.config(state=tk.DISABLED)
 
-        self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
-        self.loot_status_text.pack(fill=tk.X, pady=5)
-        self.loot_status_text.config(state=tk.DISABLED)
-
     def _create_equipment_frame(self, parent):
-        parent.columnconfigure(0, weight=1)
+        parent.columnconfigure(1, weight=1)
         equip_frame = ttk.LabelFrame(parent, text="Angelegte Ausrüstung", padding="10")
-        equip_frame.grid(row=0, column=0, sticky="new", padx=10, pady=10)
+        equip_frame.pack(fill=tk.X, padx=10, pady=10)
         for i, (slot, var) in enumerate(self.equipment_vars.items()):
             ttk.Label(equip_frame, text=f"{slot}:").grid(row=i, column=0, sticky="w")
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
@@ -169,7 +97,7 @@ class RpgGui(ttk.Frame):
         parent.rowconfigure(0, weight=1)
         parent.columnconfigure(0, weight=1)
         self.inv_frame = ttk.LabelFrame(parent, text="Rucksack", padding="10")
-        self.inv_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.inv_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inv_frame.rowconfigure(0, weight=1)
         self.inv_frame.columnconfigure(0, weight=1)
         self.inventory_listbox = tk.Listbox(self.inv_frame, bg="#2B2B2B", fg="white", selectbackground="#0078D7")
@@ -178,45 +106,45 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
+        self.inventory_listbox.bind('<Double-1>', self.on_item_double_click)
 
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
     def get_tooltip_text(self, index):
-        """Callback function to get the text for the tooltip for a specific item index."""
-        try:
-            item = self.player.inventory[index]
 
-            # Format the text
-            # Use item.name directly, as the icon is now part of __str__ but not the base name
             text = f"{item.name} ({item.rarity})\n"
             if item.slot:
                 text += f"Typ: {item.item_type} ({item.slot})\n"
             else:
                 text += f"Typ: {item.item_type}\n"
 
-            text += f"Wert: {format_currency(item.value)}\n"
-
-            if item.stats_boost:
-                text += "\n" # Add a newline only if there are stats
-                for stat, value in item.stats_boost.items():
-                    if item.item_type == "Verbrauchsgut":
-                         text += f"Stellt {value} {stat} wieder her\n"
                     else:
                         text += f"{stat}: +{value}\n"
             return text.strip()
         except IndexError:
             return ""
 
+    def _update_character_image(self, image_path):
+        if not Image or not ImageTk:
+            self.portrait_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
+            return
+        if not image_path or not os.path.exists(image_path):
+            img = Image.new('RGBA', (220, 280), (60, 60, 60, 255))
+        else:
+            try:
+                img = Image.open(image_path)
+            except IOError:
+                img = Image.new('RGBA', (220, 280), (255, 0, 0, 255))
+        img.thumbnail((220, 280), Image.Resampling.LANCZOS)
+        bg = Image.new('RGBA', (220, 280), (0, 0, 0, 0))
+        paste_x = (bg.width - img.width) // 2
+        paste_y = (bg.height - img.height) // 2
+        bg.paste(img, (paste_x, paste_y))
+        photo_img = ImageTk.PhotoImage(bg)
+        self.portrait_label.config(image=photo_img)
+        self.portrait_label.image = photo_img
+
     def update_display(self):
-        # Update Character Portrait
-        try:
-            img = Image.open(self.player.image_path)
-            img = img.resize((250, 250), Image.Resampling.LANCZOS)
-            self.character_portrait = ImageTk.PhotoImage(img)
-            self.portrait_label.config(image=self.character_portrait)
-        except (FileNotFoundError, AttributeError):
-            self.portrait_label.config(image='')
-            self.character_portrait = None
 
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
@@ -238,7 +166,6 @@ class RpgGui(ttk.Frame):
                 item_text = "⭐ " + item_text
             self.inventory_listbox.insert(tk.END, item_text)
             self.inventory_listbox.itemconfig(i, {'fg': item.color})
-
         self.lp_label_var.set(f"{self.player.current_lp} / {self.player.max_lp} LP")
         self.lp_bar['value'] = (self.player.current_lp / self.player.max_lp) * 100 if self.player.max_lp > 0 else 0
         self.mp_label_var.set(f"{self.player.current_mp} / {self.player.max_mp} MP")
@@ -291,9 +218,9 @@ class RpgGui(ttk.Frame):
     def advance_quest(self):
         if self.current_quest is None: return
         event_message = self.current_quest.advance(self.player)
-        if event_message:
+        # Only log the final message when the quest is complete
+        if event_message and self.current_quest.is_complete():
             self.add_to_log(event_message)
-
         if self.player.current_lp <= 0:
             self.handle_game_over()
             return
@@ -319,7 +246,7 @@ class RpgGui(ttk.Frame):
         else:
             progress_percent = (self.current_quest.progress / self.current_quest.duration) * 100
             self.progress_bar['value'] = progress_percent
-            self.master.after(150, self.advance_quest)
+            self.master.after(300, self.advance_quest)
         self.update_display()
 
     def equip_item(self):
@@ -337,6 +264,13 @@ class RpgGui(ttk.Frame):
         if not success:
             messagebox.showwarning("Fehler", message)
         self.update_display()
+
+    def on_item_double_click(self, event=None):
+
+        if selected_item.item_type == "Ausrüstung":
+            self.equip_item()
+        elif selected_item.item_type == "Verbrauchsgut":
+            self.use_item()
 
     def update_button_states(self, event=None):
         is_questing = self.current_quest is not None
@@ -370,12 +304,11 @@ class RpgGui(ttk.Frame):
 
     def handle_game_over(self):
         self.game_over = True
-        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
-        if self.callbacks['game_over']:
-            self.callbacks['game_over']()
+        save_highscore(self.player)
+
 
 class Tooltip:
-    """Create a tooltip that updates on motion for a given widget."""
+
     def __init__(self, widget, text_callback):
         self.widget = widget
         self.text_callback = text_callback
@@ -383,30 +316,6 @@ class Tooltip:
         self.id = None
         self.last_index = -1
 
-        self.widget.bind("<Motion>", self.on_motion)
-        self.widget.bind("<Leave>", self.on_leave)
-
-    def on_motion(self, event):
-        """Schedules a tooltip to appear when the mouse moves over a new item."""
-        try:
-            index = self.widget.nearest(event.y)
-            # Check if cursor is within the bounding box of the item
-            bbox = self.widget.bbox(index)
-            if not (bbox[0] < event.x < bbox[0] + bbox[2] and bbox[1] < event.y < bbox[1] + bbox[3]):
-                self.on_leave()
-                return
-        except (tk.TclError, IndexError):
-            self.on_leave()
-            return
-
-        if index != self.last_index:
-            self.unschedule()
-            self.hidetip()
-            self.last_index = index
-            self.id = self.widget.after(500, lambda: self.showtip(event, index))
-
-    def on_leave(self, event=None):
-        """Hides the tooltip when the mouse leaves the widget."""
         self.unschedule()
         self.hidetip()
         self.last_index = -1
@@ -417,13 +326,6 @@ class Tooltip:
             self.id = None
 
     def showtip(self, event, index):
-        """Shows the tooltip with the correct text at the correct position."""
-        text = self.text_callback(index)
-        if not text:
-            return
-
-        x = event.x_root + 25
-        y = event.y_root + 20
 
         if self.tip_window is None:
             self.tip_window = tk.Toplevel(self.widget)
@@ -432,7 +334,6 @@ class Tooltip:
                              background="#ffffe0", relief=tk.SOLID, borderwidth=1,
                              font=("tahoma", "8", "normal"))
             label.pack(ipadx=1)
-
         self.tip_window.wm_geometry(f"+{x}+{y}")
 
     def hidetip(self):
@@ -448,27 +349,16 @@ class CountdownDialog(tk.Toplevel):
         self.message = message
         self.countdown = countdown
         self.parent = parent
-
-        # Make window modal
         self.transient(parent)
         self.grab_set()
-
-        # UI Elements
         ttk.Label(self, text=self.message, wraplength=300, justify=tk.LEFT).pack(padx=20, pady=10)
-
         self.countdown_label = ttk.Label(self, text=f"Schließt in {self.countdown} Sekunden...")
         self.countdown_label.pack(pady=5)
-
         ok_button = ttk.Button(self, text="OK", command=self.destroy)
         ok_button.pack(pady=10, padx=20, fill=tk.X)
-
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-
-        # Center the window
         self.update_idletasks()
         center_window(self)
-
-        # Start the countdown
         self.update_countdown()
 
     def update_countdown(self):
@@ -480,7 +370,6 @@ class CountdownDialog(tk.Toplevel):
             self.destroy()
 
     def destroy(self):
-        # Cancel the pending `after` call before destroying the window
         if hasattr(self, '_after_id'):
             self.after_cancel(self._after_id)
         super().destroy()
