@@ -5,7 +5,7 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
-import os
+
 try:
     from PIL import Image, ImageTk
 except ImportError:
@@ -107,24 +107,47 @@ class RpgGui(ttk.Frame):
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.grid(row=0, column=0, sticky="ew")
-        labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
-        for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(char_frame, textvariable=var).grid(row=i, column=1, sticky="w")
-        attr_frame = ttk.LabelFrame(char_frame, text="Attribute", padding="5")
+
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(char_frame, text=text, padding=5)
+            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
             frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
+
+        # Image on the right
+        image_container = ttk.Frame(char_frame)
+        image_container.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        image_container.rowconfigure(0, weight=1)
+        image_container.columnconfigure(0, weight=1)
+
+        self.char_image_label = ttk.Label(image_container, anchor="center")
+        self.char_image_label.grid(row=0, column=0, sticky="nsew")
+        self.load_character_image()
+
+    def load_character_image(self):
+        """Loads and displays the character's portrait."""
+        if not Image or not ImageTk:
+            self.char_image_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
+            return
+
+        try:
+            img = Image.open(self.player.image_path)
+            img.thumbnail((220, 280))  # Resize while maintaining aspect ratio
+            photo = ImageTk.PhotoImage(img)
+
+            self.char_image_label.config(image=photo)
+            self.char_image_label.image = photo  # Keep a reference!
+        except FileNotFoundError:
+            self.char_image_label.config(image=None, text=f"Bild nicht\ngefunden:\n{self.player.image_path}")
+        except Exception as e:
+            self.char_image_label.config(image=None, text=f"Fehler beim\nLaden des Bildes:\n{e}")
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
@@ -193,6 +216,7 @@ class RpgGui(ttk.Frame):
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
         self.inventory_listbox.bind('<Double-1>', self.on_item_double_click)
+
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
     def get_tooltip_text(self, index):
@@ -336,7 +360,7 @@ class RpgGui(ttk.Frame):
         else:
             progress_percent = (self.current_quest.progress / self.current_quest.duration) * 100
             self.progress_bar['value'] = progress_percent
-            self.master.after(150, self.advance_quest)
+            self.master.after(300, self.advance_quest)
         self.update_display()
 
     def equip_item(self):
@@ -399,15 +423,7 @@ class RpgGui(ttk.Frame):
     def handle_game_over(self):
         self.game_over = True
         save_highscore(self.player)
-        self._update_character_image('assets/tombstone.png')
-        for widget in self.winfo_children():
-            try:
-                if isinstance(widget, ttk.Frame):
-                    for child in widget.winfo_children():
-                        child.config(state=tk.DISABLED)
-            except tk.TclError:
-                pass # Ignore errors for widgets that don't support 'state'
-        GameOverWindow(self, self.player, on_close_callback=self.callbacks['game_over'])
+
 
 class Tooltip:
     def __init__(self, widget, text_callback):
