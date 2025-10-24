@@ -90,6 +90,7 @@ class TraderWindow:
         buy_scrollbar = ttk.Scrollbar(buy_frame, orient=tk.VERTICAL, command=self.buy_listbox.yview)
         self.buy_listbox.config(yscrollcommand=buy_scrollbar.set)
         buy_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.buy_listbox.bind('<Double-1>', self.on_item_double_click)
 
         # Bottom frame for action buttons
         bottom_frame = ttk.Frame(main_frame)
@@ -182,6 +183,10 @@ class TraderWindow:
             self.update_display()
         else:
             messagebox.showerror("Kauf fehlgeschlagen", message, parent=self.window)
+
+    def on_item_double_click(self, event=None):
+        """Handles double-click to buy an item."""
+        self.buy_item()
 
     def close_window(self):
         """Handles the window closing event."""
