@@ -202,6 +202,7 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
+        self.inventory_listbox.bind('<Double-1>', self.on_item_double_click)
 
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
@@ -343,6 +344,20 @@ class RpgGui(ttk.Frame):
         if not success:
             messagebox.showwarning("Fehler", message)
         self.update_display()
+
+    def on_item_double_click(self, event=None):
+        """Handles double-click events on the inventory listbox."""
+        selected_indices = self.inventory_listbox.curselection()
+        if not selected_indices:
+            return
+
+        item_index = selected_indices[0]
+        selected_item = self.player.inventory[item_index]
+
+        if selected_item.item_type == "Ausrüstung":
+            self.equip_item()
+        elif selected_item.item_type == "Verbrauchsgut":
+            self.use_item()
 
     def update_button_states(self, event=None):
         is_questing = self.current_quest is not None
