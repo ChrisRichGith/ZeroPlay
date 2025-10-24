@@ -130,33 +130,46 @@ class RpgGui(ttk.Frame):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
         actions_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
         actions_frame.columnconfigure(0, weight=1)
+        actions_frame.columnconfigure(1, weight=2) # Give more space to the log
+
+        # --- Button Column ---
+        button_container = ttk.Frame(actions_frame)
+        button_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        button_container.columnconfigure(0, weight=1)
+
         buttons = [("Neue Quest beginnen", self.start_quest), ("Auto-Quest starten", self.toggle_auto_quest),
                    ("Händler besuchen", self.open_trader_window), ("Gegenstand ausrüsten", self.equip_item),
                    ("Gegenstand benutzen", self.use_item)]
         for i, (text, command) in enumerate(buttons):
-            button = ttk.Button(actions_frame, text=text, command=command)
+            button = ttk.Button(button_container, text=text, command=command)
             button.grid(row=i, column=0, sticky="ew", pady=2)
             setattr(self, f"{text.lower().replace(' ', '_')}_button", button)
+
         self.auto_quest_button = getattr(self, "auto-quest_starten_button")
         self.quest_button = getattr(self, "neue_quest_beginnen_button")
         self.trader_button = getattr(self, "händler_besuchen_button")
         self.equip_button = getattr(self, "gegenstand_ausrüsten_button")
         self.use_button = getattr(self, "gegenstand_benutzen_button")
-        self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
+
+        self.progress_bar = ttk.Progressbar(button_container, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.grid(row=len(buttons), column=0, sticky="ew", pady=(10, 5))
+
+        self.loot_status_text = tk.Text(button_container, height=2, wrap=tk.WORD, bg="#2B2B2B", fg="gold", relief="flat")
+        self.loot_status_text.grid(row=len(buttons) + 1, column=0, sticky="ew", pady=(5, 0))
+        self.loot_status_text.config(state=tk.DISABLED)
+
+        # --- Quest Log Column ---
         log_frame = ttk.LabelFrame(actions_frame, text="Log", padding=5)
-        log_frame.grid(row=len(buttons) + 1, column=0, sticky="nsew", pady=5)
+        log_frame.grid(row=0, column=1, sticky="nsew")
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
-        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="#2B2B2B", fg="white", relief="flat")
+
+        self.quest_log = tk.Text(log_frame, wrap=tk.WORD, bg="#2B2B2B", fg="white", relief="flat")
         self.quest_log.grid(row=0, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
         self.quest_log.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.quest_log.config(state=tk.DISABLED)
-        self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="#2B2B2B", fg="gold", relief="flat")
-        self.loot_status_text.grid(row=len(buttons) + 2, column=0, sticky="ew", pady=5)
-        self.loot_status_text.config(state=tk.DISABLED)
 
     def _create_equipment_frame(self, parent):
         parent.columnconfigure(0, weight=1)
