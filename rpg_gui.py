@@ -284,7 +284,7 @@ class RpgGui(ttk.Frame):
         else:
             progress_percent = (self.current_quest.progress / self.current_quest.duration) * 100
             self.progress_bar['value'] = progress_percent
-            self.master.after(150, self.advance_quest)
+            self.master.after(300, self.advance_quest)
         self.update_display()
 
     def equip_item(self):
