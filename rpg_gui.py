@@ -5,6 +5,8 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+from PIL import Image, ImageTk
+import os
 
 from character import Character
 from quest import Quest
@@ -60,36 +62,51 @@ class RpgGui(ttk.Frame):
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
-        self.columnconfigure(1, weight=1)
+        # Main layout frames
+        self.columnconfigure(0, weight=1, minsize=400) # Left column for stats and actions
+        self.columnconfigure(1, weight=2)              # Right column for portrait and inventory
         self.rowconfigure(0, weight=1)
 
-        left_pane = ttk.Frame(self, width=300)
-        left_pane.grid(row=0, column=0, sticky="ns", padx=10, pady=10)
+        # --- Left Column ---
+        left_column_frame = ttk.Frame(self)
+        left_column_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        left_column_frame.rowconfigure(1, weight=1) # Let the actions frame expand
 
-        right_pane = ttk.Frame(self)
-        right_pane.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        right_pane.columnconfigure(0, weight=1)
-        right_pane.rowconfigure(0, weight=1)
+        self._create_character_frame(left_column_frame)
+        self._create_actions_frame(left_column_frame)
 
-        self._create_character_frame(left_pane)
-        self._create_actions_frame(left_pane)
+        # --- Right Column ---
+        right_column_frame = ttk.Frame(self)
+        right_column_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        right_column_frame.rowconfigure(0, weight=3) # Give more weight to the portrait
+        right_column_frame.rowconfigure(1, weight=2) # Less weight to the notebook
+        right_column_frame.columnconfigure(0, weight=1)
 
-        # Create a notebook for equipment and inventory
-        notebook = ttk.Notebook(right_pane)
-        notebook.grid(row=0, column=0, sticky="nsew")
+        self._create_portrait_frame(right_column_frame)
 
+        # Notebook for Inventory and Equipment
+        notebook = ttk.Notebook(right_column_frame)
+        notebook.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         equipment_tab = ttk.Frame(notebook)
         inventory_tab = ttk.Frame(notebook)
         notebook.add(equipment_tab, text='Ausrüstung')
         notebook.add(inventory_tab, text='Inventar')
-
         self._create_equipment_frame(equipment_tab)
         self._create_inventory_frame(inventory_tab)
 
+    def _create_portrait_frame(self, parent):
+        """Creates the frame and label for the character portrait."""
+        portrait_frame = ttk.LabelFrame(parent, text="Porträt", padding="10")
+        portrait_frame.grid(row=0, column=0, sticky="nsew")
+        portrait_frame.columnconfigure(0, weight=1)
+        portrait_frame.rowconfigure(0, weight=1)
+
+        self.portrait_label = ttk.Label(portrait_frame, anchor="center")
+        self.portrait_label.grid(row=0, column=0, sticky="nsew")
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.pack(fill=tk.X, pady=(0, 10))
+        char_frame.grid(row=0, column=0, sticky="ew")
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
             ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
@@ -112,32 +129,46 @@ class RpgGui(ttk.Frame):
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
-        actions_frame.pack(fill=tk.X)
-        self.quest_button = ttk.Button(actions_frame, text="Neue Quest beginnen", command=self.start_quest)
-        self.quest_button.pack(fill=tk.X, pady=5)
-        self.auto_quest_button = ttk.Button(actions_frame, text="Auto-Quest starten", command=self.toggle_auto_quest)
-        self.auto_quest_button.pack(fill=tk.X, pady=5)
-        self.trader_button = ttk.Button(actions_frame, text="Händler besuchen", command=self.open_trader_window)
-        self.trader_button.pack(fill=tk.X, pady=5)
-        self.equip_button = ttk.Button(actions_frame, text="Gegenstand ausrüsten", command=self.equip_item)
-        self.equip_button.pack(fill=tk.X, pady=5)
-        self.use_button = ttk.Button(actions_frame, text="Gegenstand benutzen", command=self.use_item)
-        self.use_button.pack(fill=tk.X, pady=5)
+        actions_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        actions_frame.columnconfigure(0, weight=1) # Allow buttons to expand
+
+        buttons = [
+            ("Neue Quest beginnen", self.start_quest),
+            ("Auto-Quest starten", self.toggle_auto_quest),
+            ("Händler besuchen", self.open_trader_window),
+            ("Gegenstand ausrüsten", self.equip_item),
+            ("Gegenstand benutzen", self.use_item)
+        ]
+
+        for i, (text, command) in enumerate(buttons):
+            button = ttk.Button(actions_frame, text=text, command=command)
+            button.grid(row=i, column=0, sticky="ew", pady=2)
+            setattr(self, f"{text.lower().replace(' ', '_')}_button", button)
+
+        self.auto_quest_button = getattr(self, "auto-quest_starten_button")
+        self.quest_button = getattr(self, "neue_quest_beginnen_button")
+        self.trader_button = getattr(self, "händler_besuchen_button")
+        self.equip_button = getattr(self, "gegenstand_ausrüsten_button")
+        self.use_button = getattr(self, "gegenstand_benutzen_button")
+
+
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
-        self.progress_bar.pack(fill=tk.X, pady=(10, 5))
+        self.progress_bar.grid(row=len(buttons), column=0, sticky="ew", pady=(10, 5))
 
         # Quest Log
-        log_frame = ttk.Frame(actions_frame)
-        log_frame.pack(fill=tk.X, pady=5)
-        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="lightgrey", relief="flat")
-        self.quest_log.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        log_frame = ttk.LabelFrame(actions_frame, text="Log", padding=5)
+        log_frame.grid(row=len(buttons) + 1, column=0, sticky="nsew", pady=5)
+        log_frame.columnconfigure(0, weight=1)
+        log_frame.rowconfigure(0, weight=1)
+        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="#2B2B2B", fg="white", relief="flat")
+        self.quest_log.grid(row=0, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
         self.quest_log.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar.grid(row=0, column=1, sticky="ns")
         self.quest_log.config(state=tk.DISABLED)
 
-        self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
-        self.loot_status_text.pack(fill=tk.X, pady=5)
+        self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="#2B2B2B", fg="gold", relief="flat")
+        self.loot_status_text.grid(row=len(buttons) + 2, column=0, sticky="ew", pady=5)
         self.loot_status_text.config(state=tk.DISABLED)
 
     def _create_equipment_frame(self, parent):
@@ -182,7 +213,37 @@ class RpgGui(ttk.Frame):
         except (IndexError, tk.TclError):
             return ""
 
+    def _update_character_image(self, image_path):
+        """Loads, resizes, and displays the character image."""
+        if not image_path or not os.path.exists(image_path):
+            # Create a placeholder image if the path is invalid
+            placeholder = Image.new('RGBA', (220, 280), (60, 60, 60, 255))
+            img = placeholder
+        else:
+            try:
+                img = Image.open(image_path)
+            except IOError:
+                # Handle cases where the file is corrupted
+                img = Image.new('RGBA', (220, 280), (255, 0, 0, 255)) # Red error placeholder
+
+        # Resize the image to fit the label area while maintaining aspect ratio
+        img.thumbnail((220, 280), Image.Resampling.LANCZOS)
+
+        # Create a new blank image with a transparent background
+        bg = Image.new('RGBA', (220, 280), (0, 0, 0, 0))
+
+        # Calculate coordinates to paste the resized image in the center
+        paste_x = (bg.width - img.width) // 2
+        paste_y = (bg.height - img.height) // 2
+        bg.paste(img, (paste_x, paste_y))
+
+        photo_img = ImageTk.PhotoImage(bg)
+        self.portrait_label.config(image=photo_img)
+        # Keep a reference to prevent garbage collection
+        self.portrait_label.image = photo_img
+
     def update_display(self):
+        self._update_character_image(self.player.image_path)
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
         self.char_gold_var.set(format_currency(self.player.copper))
@@ -335,6 +396,7 @@ class RpgGui(ttk.Frame):
 
     def handle_game_over(self):
         self.game_over = True
+        self._update_character_image('assets/tombstone.png')
         messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
         if self.callbacks['game_over']:
             self.callbacks['game_over']()
