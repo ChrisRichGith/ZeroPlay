@@ -10,7 +10,7 @@ def format_currency(copper_amount):
     100 silver = 1 gold
     """
     if copper_amount == 0:
-        return "0c"
+        return f"0 🟠"
 
     gold = copper_amount // 10000
     silver = (copper_amount % 10000) // 100
@@ -18,11 +18,11 @@ def format_currency(copper_amount):
 
     parts = []
     if gold > 0:
-        parts.append(f"{gold}g")
+        parts.append(f"{gold} 🟡")
     if silver > 0:
-        parts.append(f"{silver}s")
+        parts.append(f"{silver} ⚪")
     if copper > 0:
-        parts.append(f"{copper}c")
+        parts.append(f"{copper} 🟠")
 
     return " ".join(parts)
 
