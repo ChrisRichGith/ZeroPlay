@@ -5,6 +5,7 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+from PIL import Image, ImageTk
 
 from character import Character
 from quest import Quest
@@ -60,24 +61,37 @@ class RpgGui(ttk.Frame):
 
     def create_widgets(self):
         """Creates and places all the widgets in the window."""
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=1)
+        # Main layout grid
+        self.columnconfigure(0, weight=1, uniform="group1")
+        self.columnconfigure(1, weight=0) # Actions column should not expand
+        self.columnconfigure(2, weight=1, uniform="group1")
+        self.rowconfigure(0, weight=1) # Top area with character, actions, inventory
+        self.rowconfigure(1, weight=0) # Bottom area for the log
 
-        left_pane = ttk.Frame(self, width=300)
-        left_pane.grid(row=0, column=0, sticky="ns", padx=10, pady=10)
+        # Create main frames for each section
+        char_frame = ttk.Frame(self)
+        char_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-        right_pane = ttk.Frame(self)
-        right_pane.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        right_pane.columnconfigure(0, weight=1)
-        right_pane.rowconfigure(0, weight=1)
+        actions_frame = ttk.Frame(self)
+        actions_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
-        self._create_character_frame(left_pane)
-        self._create_actions_frame(left_pane)
+        inventory_frame = ttk.Frame(self)
+        inventory_frame.grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
+        inventory_frame.rowconfigure(0, weight=1)
+        inventory_frame.columnconfigure(0, weight=1)
 
-        # Create a notebook for equipment and inventory
-        notebook = ttk.Notebook(right_pane)
+
+        log_frame = ttk.Frame(self)
+        log_frame.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=10, pady=(0, 10))
+
+        # Populate the frames
+        self._create_character_frame(char_frame)
+        self._create_portrait_frame(char_frame)
+        self._create_actions_frame(actions_frame)
+
+        # Create and populate the notebook for equipment and inventory
+        notebook = ttk.Notebook(inventory_frame)
         notebook.grid(row=0, column=0, sticky="nsew")
-
         equipment_tab = ttk.Frame(notebook)
         inventory_tab = ttk.Frame(notebook)
         notebook.add(equipment_tab, text='Ausrüstung')
@@ -86,10 +100,11 @@ class RpgGui(ttk.Frame):
         self._create_equipment_frame(equipment_tab)
         self._create_inventory_frame(inventory_tab)
 
+        self._create_log_frame(log_frame)
 
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
-        char_frame.pack(fill=tk.X, pady=(0, 10))
+        char_frame.pack(fill=tk.X, pady=(0, 10), anchor='n')
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
             ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
@@ -110,9 +125,32 @@ class RpgGui(ttk.Frame):
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
 
+    def _create_portrait_frame(self, parent):
+        """Creates the frame and label to display the character's portrait."""
+        self.portrait_frame = ttk.Frame(parent)
+        self.portrait_frame.pack(fill=tk.BOTH, expand=True, side=tk.RIGHT, anchor='n', padx=5)
+
+        self.portrait_label = ttk.Label(self.portrait_frame)
+        self.portrait_label.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            if self.player.image_path:
+                img = Image.open(self.player.image_path)
+                img.thumbnail((220, 280))  # Resize image to fit
+                photo_img = ImageTk.PhotoImage(img)
+
+                self.portrait_label.config(image=photo_img)
+                # Keep a reference to the image to prevent it from being garbage collected
+                self.portrait_label.image = photo_img
+        except FileNotFoundError:
+            self.portrait_label.config(text=f"Bild nicht\ngefunden:\n{self.player.image_path}")
+        except Exception as e:
+            self.portrait_label.config(text=f"Fehler beim\nLaden des Bildes:\n{e}")
+
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
-        actions_frame.pack(fill=tk.X)
+        actions_frame.pack(fill=tk.Y, expand=False, anchor='n')
+
         self.quest_button = ttk.Button(actions_frame, text="Neue Quest beginnen", command=self.start_quest)
         self.quest_button.pack(fill=tk.X, pady=5)
         self.auto_quest_button = ttk.Button(actions_frame, text="Auto-Quest starten", command=self.toggle_auto_quest)
@@ -126,24 +164,29 @@ class RpgGui(ttk.Frame):
         self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
 
-        # Quest Log
-        log_frame = ttk.Frame(actions_frame)
-        log_frame.pack(fill=tk.X, pady=5)
-        self.quest_log = tk.Text(log_frame, height=5, wrap=tk.WORD, bg="lightgrey", relief="flat")
-        self.quest_log.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.quest_log.yview)
-        self.quest_log.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.quest_log.config(state=tk.DISABLED)
-
         self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
         self.loot_status_text.pack(fill=tk.X, pady=5)
         self.loot_status_text.config(state=tk.DISABLED)
 
+    def _create_log_frame(self, parent):
+        """Creates the quest log text widget."""
+        log_labelframe = ttk.LabelFrame(parent, text="Log", padding="10")
+        log_labelframe.pack(fill=tk.X, expand=True)
+
+        log_labelframe.rowconfigure(0, weight=1)
+        log_labelframe.columnconfigure(0, weight=1)
+
+        self.quest_log = tk.Text(log_labelframe, height=10, wrap=tk.WORD, bg="#2B2B2B", fg="white", relief="flat")
+        self.quest_log.grid(row=0, column=0, sticky="nsew")
+        scrollbar = ttk.Scrollbar(log_labelframe, orient=tk.VERTICAL, command=self.quest_log.yview)
+        self.quest_log.config(yscrollcommand=scrollbar.set)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.quest_log.config(state=tk.DISABLED)
+
     def _create_equipment_frame(self, parent):
-        parent.columnconfigure(0, weight=1)
+        parent.columnconfigure(1, weight=1)
         equip_frame = ttk.LabelFrame(parent, text="Angelegte Ausrüstung", padding="10")
-        equip_frame.grid(row=0, column=0, sticky="new", padx=10, pady=10)
+        equip_frame.pack(fill=tk.X, padx=10, pady=10)
         for i, (slot, var) in enumerate(self.equipment_vars.items()):
             ttk.Label(equip_frame, text=f"{slot}:").grid(row=i, column=0, sticky="w")
             ttk.Label(equip_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
@@ -152,7 +195,7 @@ class RpgGui(ttk.Frame):
         parent.rowconfigure(0, weight=1)
         parent.columnconfigure(0, weight=1)
         self.inv_frame = ttk.LabelFrame(parent, text="Rucksack", padding="10")
-        self.inv_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.inv_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inv_frame.rowconfigure(0, weight=1)
         self.inv_frame.columnconfigure(0, weight=1)
         self.inventory_listbox = tk.Listbox(self.inv_frame, bg="#2B2B2B", fg="white", selectbackground="#0078D7")
