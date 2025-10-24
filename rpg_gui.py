@@ -7,12 +7,6 @@ from tkinter import ttk, simpledialog, messagebox
 import random
 from PIL import Image, ImageTk
 
-try:
-    from PIL import Image, ImageTk
-except ImportError:
-    messagebox.showerror("Abhängigkeit fehlt", "Pillow ist nicht installiert. Bilder werden nicht angezeigt.\nBitte 'pip install Pillow' ausführen.")
-    Image = None
-    ImageTk = None
 
 from character import Character
 from quest import Quest
@@ -80,13 +74,6 @@ class RpgGui(ttk.Frame):
 
 
 
-        attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        for i, (stat, var) in enumerate(self.stats_vars.items()):
-            ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
-            ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
-        for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
-            frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
@@ -124,19 +111,13 @@ class RpgGui(ttk.Frame):
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
     def get_tooltip_text(self, index):
-        try:
-            item = self.player.inventory[index]
+
             text = f"{item.name} ({item.rarity})\n"
             if item.slot:
                 text += f"Typ: {item.item_type} ({item.slot})\n"
             else:
                 text += f"Typ: {item.item_type}\n"
-            text += f"Wert: {format_currency(item.value)}\n"
-            if item.stats_boost:
-                text += "\n"
-                for stat, value in item.stats_boost.items():
-                    if item.item_type == "Verbrauchsgut":
-                        text += f"Stellt {value} {stat} wieder her\n"
+
                     else:
                         text += f"{stat}: +{value}\n"
             return text.strip()
@@ -164,7 +145,7 @@ class RpgGui(ttk.Frame):
         self.portrait_label.image = photo_img
 
     def update_display(self):
-        self._update_character_image(self.player.image_path)
+
         self.char_name_var.set(f"{self.player.name} ({self.player.klasse})")
         self.char_level_var.set(self.player.level)
         self.char_gold_var.set(format_currency(self.player.copper))
@@ -327,32 +308,14 @@ class RpgGui(ttk.Frame):
 
 
 class Tooltip:
+
     def __init__(self, widget, text_callback):
         self.widget = widget
         self.text_callback = text_callback
         self.tip_window = None
         self.id = None
         self.last_index = -1
-        self.widget.bind("<Motion>", self.on_motion)
-        self.widget.bind("<Leave>", self.on_leave)
 
-    def on_motion(self, event):
-        try:
-            index = self.widget.nearest(event.y)
-            bbox = self.widget.bbox(index)
-            if not (bbox[0] < event.x < bbox[0] + bbox[2] and bbox[1] < event.y < bbox[1] + bbox[3]):
-                self.on_leave()
-                return
-        except (tk.TclError, IndexError):
-            self.on_leave()
-            return
-        if index != self.last_index:
-            self.unschedule()
-            self.hidetip()
-            self.last_index = index
-            self.id = self.widget.after(500, lambda: self.showtip(event, index))
-
-    def on_leave(self, event=None):
         self.unschedule()
         self.hidetip()
         self.last_index = -1
@@ -363,11 +326,7 @@ class Tooltip:
             self.id = None
 
     def showtip(self, event, index):
-        text = self.text_callback(index)
-        if not text:
-            return
-        x = event.x_root + 25
-        y = event.y_root + 20
+
         if self.tip_window is None:
             self.tip_window = tk.Toplevel(self.widget)
             self.tip_window.wm_overrideredirect(True)

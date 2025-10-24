@@ -110,6 +110,7 @@ class TraderWindow:
 
     def update_display(self):
         """Updates all display elements in the trader window."""
+
         if not self.window.winfo_exists():
             return
 

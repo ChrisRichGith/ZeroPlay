@@ -8,19 +8,19 @@ CLASSES = {
         "description": "Ein Meister des Nahkampfs, robust und stark.",
         "attributes": {'Stärke': 8, 'Intelligenz': 3, 'Glück': 4},
         "main_stat": "Stärke",
-        "image_path": "assets/krieger.png"
+
     },
     "Magier": {
         "description": "Ein weiser Gelehrter, der arkane Energien bändigt.",
         "attributes": {'Stärke': 3, 'Intelligenz': 8, 'Glück': 4},
         "main_stat": "Intelligenz",
-        "image_path": "assets/magier.png"
+
     },
     "Schurke": {
         "description": "Ein listiger Halunke, der sein Glück selbst in die Hand nimmt.",
         "attributes": {'Stärke': 5, 'Intelligenz': 5, 'Glück': 7},
         "main_stat": "Glück",
-        "image_path": "assets/schurke.png"
+
     }
 }
 
