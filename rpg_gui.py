@@ -159,7 +159,7 @@ class RpgGui(ttk.Frame):
         self.equip_button.pack(fill=tk.X, pady=5)
         self.use_button = ttk.Button(actions_frame, text="Gegenstand benutzen", command=self.use_item)
         self.use_button.pack(fill=tk.X, pady=5)
-        self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=200)
+        self.progress_bar = ttk.Progressbar(actions_frame, orient='horizontal', mode='determinate', length=135)
         self.progress_bar.pack(fill=tk.X, pady=(10, 5))
 
         self.loot_status_text = tk.Text(actions_frame, height=2, wrap=tk.WORD, bg="lightgrey", relief="flat", fg="gray")
