@@ -4,9 +4,8 @@ Defines the GUI Frame for the main start menu.
 """
 import tkinter as tk
 from tkinter import ttk
-from save_load_system import get_save_files
-
 from save_load_system import get_save_files, load_game
+from highscore_gui import HighscoreWindow
 
 class StartMenu(ttk.Frame):
     """Manages the start menu frame."""
@@ -85,8 +84,15 @@ class StartMenu(ttk.Frame):
         new_game_button = ttk.Button(button_frame, text="Neues Spiel", command=self.callbacks['new'])
         new_game_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
+        highscore_button = ttk.Button(button_frame, text="Bestenliste", command=self.show_highscores)
+        highscore_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
         quit_button = ttk.Button(button_frame, text="Beenden", command=self.callbacks['quit'])
         quit_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+    def show_highscores(self):
+        """Opens the highscore window."""
+        HighscoreWindow(self)
 
     def populate_save_list(self):
         """Fills the listbox with available save files."""

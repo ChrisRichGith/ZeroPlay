@@ -5,12 +5,20 @@ Defines the main game GUI frame.
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import random
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    messagebox.showerror("Abhängigkeit fehlt", "Pillow ist nicht installiert. Bilder werden nicht angezeigt.\nBitte 'pip install Pillow' ausführen.")
+    Image = None
+    ImageTk = None
 
 from character import Character
 from quest import Quest
 from trader import Trader
 from trader_gui import TraderWindow
 from save_load_system import save_game
+from highscore_manager import save_highscore
+from game_over_gui import GameOverWindow
 from utils import format_currency, center_window
 
 # Liste verfügbarer Quests
@@ -90,25 +98,59 @@ class RpgGui(ttk.Frame):
     def _create_character_frame(self, parent):
         char_frame = ttk.LabelFrame(parent, text="Charakterstatus", padding="10")
         char_frame.pack(fill=tk.X, pady=(0, 10))
+        char_frame.columnconfigure(1, weight=1) # Allow stat frame to expand
+
+        # Stat details on the left
+        stats_container = ttk.Frame(char_frame)
+        stats_container.grid(row=0, column=0, sticky="nsew")
+
         labels = {"Name:": self.char_name_var, "Level:": self.char_level_var, "Gold:": self.char_gold_var}
         for i, (text, var) in enumerate(labels.items()):
-            ttk.Label(char_frame, text=text).grid(row=i, column=0, sticky="w")
-            ttk.Label(char_frame, textvariable=var).grid(row=i, column=1, sticky="w")
+            ttk.Label(stats_container, text=text).grid(row=i, column=0, sticky="w")
+            ttk.Label(stats_container, textvariable=var).grid(row=i, column=1, sticky="w")
 
-        attr_frame = ttk.LabelFrame(char_frame, text="Attribute", padding="5")
+        attr_frame = ttk.LabelFrame(stats_container, text="Attribute", padding="5")
         attr_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for i, (stat, var) in enumerate(self.stats_vars.items()):
             ttk.Label(attr_frame, text=f"{stat}:").grid(row=i, column=0, sticky="w")
             ttk.Label(attr_frame, textvariable=var).grid(row=i, column=1, sticky="w", padx=5)
 
         for i, (text, var_name) in enumerate([("Lebenspunkte", "lp"), ("Manapunkte", "mp"), ("Erfahrung", "xp")]):
-            frame = ttk.LabelFrame(char_frame, text=text, padding=5)
+            frame = ttk.LabelFrame(stats_container, text=text, padding=5)
             frame.grid(row=4+i, column=0, columnspan=2, sticky="ew", pady=(5, 0))
             bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate')
             bar.pack(fill=tk.X, expand=True)
             label_var = getattr(self, f"{var_name}_label_var")
             ttk.Label(frame, textvariable=label_var, anchor="center").pack()
             setattr(self, f"{var_name}_bar", bar)
+
+        # Image on the right
+        image_container = ttk.Frame(char_frame)
+        image_container.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        image_container.rowconfigure(0, weight=1)
+        image_container.columnconfigure(0, weight=1)
+
+        self.char_image_label = ttk.Label(image_container, anchor="center")
+        self.char_image_label.grid(row=0, column=0, sticky="nsew")
+        self.load_character_image()
+
+    def load_character_image(self):
+        """Loads and displays the character's portrait."""
+        if not Image or not ImageTk:
+            self.char_image_label.config(text="Bild-Bibliothek\nfehlt (Pillow)")
+            return
+
+        try:
+            img = Image.open(self.player.image_path)
+            img.thumbnail((220, 280))  # Resize while maintaining aspect ratio
+            photo = ImageTk.PhotoImage(img)
+
+            self.char_image_label.config(image=photo)
+            self.char_image_label.image = photo  # Keep a reference!
+        except FileNotFoundError:
+            self.char_image_label.config(image=None, text=f"Bild nicht\ngefunden:\n{self.player.image_path}")
+        except Exception as e:
+            self.char_image_label.config(image=None, text=f"Fehler beim\nLaden des Bildes:\n{e}")
 
     def _create_actions_frame(self, parent):
         actions_frame = ttk.LabelFrame(parent, text="Aktionen", padding="10")
@@ -161,6 +203,7 @@ class RpgGui(ttk.Frame):
         self.inventory_listbox.config(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_listbox.bind('<<ListboxSelect>>', self.update_button_states)
+        self.inventory_listbox.bind('<Double-1>', self.on_item_double_click)
 
         self.tooltip = Tooltip(self.inventory_listbox, self.get_tooltip_text)
 
@@ -335,9 +378,28 @@ class RpgGui(ttk.Frame):
 
     def handle_game_over(self):
         self.game_over = True
-        messagebox.showerror("Game Over", f"Du bist auf Level {self.player.level} gestorben. Ein neuer Held wird rekrutiert.")
-        if self.callbacks['game_over']:
-            self.callbacks['game_over']()
+        save_highscore(self.player)
+        # Disable all buttons to prevent interaction
+        for widget in self.winfo_children():
+            if isinstance(widget, ttk.Frame):
+                for child in widget.winfo_children():
+                    child.config(state=tk.DISABLED)
+
+        GameOverWindow(self, self.player, on_close_callback=self.callbacks['game_over'])
+
+    def on_item_double_click(self, event=None):
+        """Handles the double-click event on an inventory item."""
+        selected_indices = self.inventory_listbox.curselection()
+        if not selected_indices:
+            return
+
+        item_index = selected_indices[0]
+        selected_item = self.player.inventory[item_index]
+
+        if selected_item.item_type == "Ausrüstung":
+            self.equip_item()
+        elif selected_item.item_type == "Verbrauchsgut":
+            self.use_item()
 
 class Tooltip:
     """
