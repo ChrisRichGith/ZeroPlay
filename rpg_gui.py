@@ -298,7 +298,8 @@ class RpgGui(ttk.Frame):
     def advance_quest(self):
         if self.current_quest is None: return
         event_message = self.current_quest.advance(self.player)
-        if event_message:
+        # Only log the final message when the quest is complete
+        if event_message and self.current_quest.is_complete():
             self.add_to_log(event_message)
 
         if self.player.current_lp <= 0:
